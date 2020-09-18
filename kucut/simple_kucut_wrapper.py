@@ -1,6 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from .wordcut import *
+from kucut.wordcut import *
 import os.path
 
 class SimpleKucutWrapper:

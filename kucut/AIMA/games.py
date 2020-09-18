@@ -2,7 +2,7 @@
 
 """
 
-from .utils import *
+from kucut.AIMA.utils import *
 import random 
 
 #______________________________________________________________________________

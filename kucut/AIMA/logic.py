@@ -26,8 +26,8 @@ And a few other functions:
 
 
 import re
-from . import agents
-from .utils import *
+from kucut.AIMA import agents
+from kucut.AIMA.utils import *
 
 #______________________________________________________________________________
 

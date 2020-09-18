@@ -1,8 +1,8 @@
 """CSP (Constraint Satisfaction Problems) problems and solvers. (Chapter 5)."""
 
 
-from .utils import *
-from . import search
+from kucut.AIMA.utils import *
+from kucut.AIMA import search
 import types
 
 class CSP(search.Problem):

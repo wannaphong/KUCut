@@ -18,8 +18,8 @@ Then we implement various functions for doing logical inference:
 
 
 import re
-from . import agents
-from .utils import *
+from kucut.AIMA import agents
+from kucut.AIMA.utils import *
 
 #______________________________________________________________________________
 

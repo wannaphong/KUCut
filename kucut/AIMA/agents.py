@@ -21,7 +21,7 @@ EnvFrame ## A graphical representation of the Environment
 
 """
 
-from .utils import *
+from kucut.AIMA.utils import *
 import random, copy
 
 #______________________________________________________________________________

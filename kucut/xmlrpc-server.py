@@ -1,7 +1,7 @@
 #! /usr/bin/python
 #-*- coding:utf8 -*-
 
-from .wordcut import *
+from kucut.wordcut import *
 
 import os.path, sys
 import xmlrpc.server

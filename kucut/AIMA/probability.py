@@ -1,8 +1,8 @@
 """Probability models. (Chapter 13-15)
 """
 
-from .utils import *
-from .logic import extend
+from kucut.AIMA.utils import *
+from kucut.AIMA.logic import extend
 from . import agents
 import bisect, random
 

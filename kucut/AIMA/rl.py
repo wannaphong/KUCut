@@ -1,8 +1,8 @@
 """Reinforcement Learning (Chapter 21)
 """
 
-from .utils import *
-from . import agents
+from kucut.AIMA.utils import *
+from kucut.AIMA import agents
 
 class PassiveADPAgent(agents.Agent):
     """Passive (non-learning) agent that uses adaptive dynamic programming
