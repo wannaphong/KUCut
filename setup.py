@@ -1,4 +1,5 @@
 from distutils.core import setup
+requirements=["bsddb3"]
 setup(name='kucut',
       version='1.4.3b2',
       scripts=['scripts/kucut'],
@@ -7,4 +8,5 @@ setup(name='kucut',
       author_email='sutee.s@gmail.com',
       url='http://naist.cpe.ku.ac.th/',
       packages=['kucut', 'kucut/AIMA'],
+      install_requires=requirements,
       package_data={'kucut': ['corpus.db', 'dict/*.txt']})

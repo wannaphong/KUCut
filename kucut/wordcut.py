@@ -1,7 +1,8 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-import math,sys,string,re,bsddb,time,os.path,random,pickle
+import math,sys,string,re,time,os.path,random,pickle
+import bsddb3 as bsddb
 import optparse
 
 from AIMA import text
