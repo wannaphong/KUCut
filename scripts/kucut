@@ -1,4 +1,0 @@
-#! python
-from kucut import cutfile
-if __name__ == '__main__':
-    cutfile()
