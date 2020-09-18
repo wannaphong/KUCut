@@ -2,8 +2,9 @@
 We include it for those who have not upgraded to 2.3 yet.
 We've tested with 2.2, and 2.1 should also work."""
 
-from __future__ import generators
+
 import operator
+from functools import reduce
 
 try: bool
 except:
@@ -34,7 +35,7 @@ except:
         i = 0
         it = iter(collection)
         while 1:
-            yield (i, it.next())
+            yield (i, next(it))
             i += 1
     
 class Set:
@@ -50,7 +51,7 @@ class Set:
         return element in self.dict
 
     def __getitem__(self, i):
-        return self.dict.items()[i]
+        return list(self.dict.items())[i]
 
     def add(self, element):
         self.dict[element] = 1
@@ -81,13 +82,13 @@ class Set:
         return self
 
     def intersection_update(self, other):
-        for e in self.dict.keys():
+        for e in list(self.dict.keys()):
             if e not in other:
                 self.remove(e)
         return self
 
     def issubset(self, other):
-        for e in self.dict.keys():
+        for e in list(self.dict.keys()):
             if e not in other:
                 return False
         return True
@@ -105,4 +106,4 @@ class Set:
         return cmp(self.dict, other.dict)
 
     def __repr__(self):
-        return "{%s}" % ", ".join([str(e) for e in self.dict.keys()])
+        return "{%s}" % ", ".join([str(e) for e in list(self.dict.keys())])

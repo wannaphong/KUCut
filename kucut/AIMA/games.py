@@ -2,7 +2,7 @@
 
 """
 
-from utils import *
+from .utils import *
 import random 
 
 #______________________________________________________________________________
@@ -32,7 +32,7 @@ def minimax_decision(state, game):
 
     # Body of minimax_decision starts here:
     action, state = argmax(game.successors(state),
-                           lambda ((a, s)): min_value(s))
+                           lambda a_s: min_value(a_s[1]))
     return action
 
 
@@ -68,7 +68,7 @@ def alphabeta_full_search(state, game):
 
     # Body of alphabeta_search starts here:
     action, state = argmax(game.successors(state),
-                           lambda ((a, s)): min_value(s, -infinity, infinity))
+                           lambda a_s1: min_value(a_s1[1], -infinity, infinity))
     return action
 
 def alphabeta_search(state, game, d=4, cutoff_test=None, eval_fn=None):
@@ -105,7 +105,7 @@ def alphabeta_search(state, game, d=4, cutoff_test=None, eval_fn=None):
                    (lambda state,depth: depth>d or game.terminal_test(state)))
     eval_fn = eval_fn or (lambda state: game.utility(state, player))
     action, state = argmax(game.successors(state),
-                           lambda ((a, s)): min_value(s, -infinity, infinity, 0))
+                           lambda a_s2: min_value(a_s2[1], -infinity, infinity, 0))
     return action
 
 #______________________________________________________________________________
@@ -114,7 +114,7 @@ def alphabeta_search(state, game, d=4, cutoff_test=None, eval_fn=None):
 def query_player(game, state):
     "Make a move by querying standard input."
     game.display(state)
-    return num_or_str(raw_input('Your move? '))
+    return num_or_str(input('Your move? '))
 
 def random_player(game, state):
     "A player that chooses a legal move at random."
@@ -167,7 +167,7 @@ class Game:
 
     def display(self, state):
         "Print or otherwise display the state."
-        print state
+        print(state)
 
     def successors(self, state):
         "Return a list of legal (move, state) pairs."
@@ -245,8 +245,8 @@ class TicTacToe(Game):
         board = state.board
         for x in range(1, self.h+1):
             for y in range(1, self.v+1):
-                print board.get((x, y), '.'),
-            print
+                print(board.get((x, y), '.'), end=' ')
+            print()
 
     def compute_utility(self, board, move, player):
         "If X wins with this move, return 1; if O return -1; else return 0."
@@ -258,8 +258,9 @@ class TicTacToe(Game):
         else:
             return 0
 
-    def k_in_row(self, board, move, player, (delta_x, delta_y)):
+    def k_in_row(self, board, move, player, xxx_todo_changeme):
         "Return true if there is a line through move on board for player."
+        (delta_x, delta_y) = xxx_todo_changeme
         x, y = move
         n = 0 # n is number of moves in row
         while board.get((x, y)) == player:

@@ -55,7 +55,7 @@ def convert_files(filenames, local_filenames=None, tblfile='readme.htm'):
         totallines = 0
         tbl = ["<tr><th>Chapter<th>Module<th>Files<th>Lines<th>Description"]
         fmt = "<tr><td align=right>%s<th>%s<td>%s<td align=right>%s<td>%s" 
-        items = summary_table.items(); items.sort(num_cmp)
+        items = list(summary_table.items()); items.sort(num_cmp)
         for (ch, entries) in items:
             for (module, lines, desc) in entries:
                 totallines += lines

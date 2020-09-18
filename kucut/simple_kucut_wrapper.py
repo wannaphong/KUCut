@@ -1,6 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from wordcut import *
+from .wordcut import *
 import os.path
 
 class SimpleKucutWrapper:
@@ -23,13 +23,13 @@ class SimpleKucutWrapper:
     def tokenize(self, text_list):
         results, ambiguous_list = \
             self.seg.tokenize(text_list, style='Normal', space=True)
-        return map(treat_result, results)
+        return list(map(treat_result, results))
 
 def treat_word(w):
     return w.decode("iso8859_11")
 
 def treat_t(t):
-    return map(treat_word, t[0])
+    return list(map(treat_word, t[0]))
 
 def treat_result(result):
-    return map(treat_t, result[1])
+    return list(map(treat_t, result[1]))

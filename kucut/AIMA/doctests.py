@@ -23,7 +23,7 @@ def run_tests(modules):
         doctest.testmod(module, report=0, verbose=("-v" in sys.argv))
         if demos:
             for stmt in re.findall(">>> (.*)", demos):
-                exec stmt in module.__dict__
+                exec(stmt, module.__dict__)
     doctest.master.summarize()
 
 

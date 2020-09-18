@@ -4,9 +4,9 @@ The way to use this code is to subclass Problem to create a class of problems,
 then create problem instances and solve them with calls to the various search
 functions."""
 
-from __future__ import generators
-from utils import *
-import agents
+
+from .utils import *
+from . import agents
 import math, random, sys, time, bisect, string
 
 #______________________________________________________________________________
@@ -175,7 +175,7 @@ def depth_limited_search(problem, limit=50):
 
 def iterative_deepening_search(problem):
     "[Fig. 3.13]"
-    for depth in xrange(sys.maxint):
+    for depth in range(sys.maxsize):
         result = depth_limited_search(problem, depth)
         if result is not 'cutoff':
             return result
@@ -248,7 +248,7 @@ def exp_schedule(k=20, lam=0.005, limit=100):
 def simulated_annealing(problem, schedule=exp_schedule()):
     "[Fig. 4.5]"
     current = Node(problem.initial)
-    for t in xrange(sys.maxint):
+    for t in range(sys.maxsize):
         T = schedule(t)
         if T == 0:
             return current
@@ -342,8 +342,8 @@ class Graph:
 
     def make_undirected(self):
         "Make a digraph into an undirected graph by adding symmetric edges."
-        for a in self.dict.keys():
-            for (b, distance) in self.dict[a].items():
+        for a in list(self.dict.keys()):
+            for (b, distance) in list(self.dict[a].items()):
                 self.connect1(b, a, distance)
 
     def connect(self, A, B, distance=1):
@@ -366,13 +366,13 @@ class Graph:
 
     def nodes(self):
         "Return a list of nodes in the graph."
-        return self.dict.keys()
+        return list(self.dict.keys())
 
 def UndirectedGraph(dict=None):
     "Build a Graph where every edge (including future ones) goes both ways."
     return Graph(dict=dict, directed=False)
 
-def RandomGraph(nodes=range(10), min_links=2, width=400, height=300,
+def RandomGraph(nodes=list(range(10)), min_links=2, width=400, height=300,
                                 curvature=lambda: random.uniform(1.1, 1.5)):
     """Construct a random graph, with the specified nodes, and random links.
     The nodes are laid out randomly on a (width x height) rectangle.
@@ -435,7 +435,7 @@ class GraphProblem(Problem):
 
     def successor(self, A):
         "Return a list of (action, result) pairs."
-        return [(B, B) for B in self.graph.get(A).keys()]
+        return [(B, B) for B in list(self.graph.get(A).keys())]
 
     def path_cost(self, cost_so_far, A, action, B):
         return cost_so_far + (self.graph.get(A,B) or infinity)
@@ -514,7 +514,7 @@ def random_boggle(n=4):
     We represent a board as a linear list of letters."""
     cubes = [cubes16[i % 16] for i in range(n*n)]
     random.shuffle(cubes)
-    return map(random.choice, cubes)
+    return list(map(random.choice, cubes))
 
 ## The best 5x5 board found by Boyan, with our word list this board scores
 ## 2274 words, for a score of 9837
@@ -525,10 +525,10 @@ def print_boggle(board):
     "Print the board in a 2-d array."
     n2 = len(board); n = exact_sqrt(n2)
     for i in range(n2):
-        if i % n == 0: print
-        if board[i] == 'Q': print 'Qu',
-        else: print str(board[i]) + ' ',
-    print
+        if i % n == 0: print()
+        if board[i] == 'Q': print('Qu', end=' ')
+        else: print(str(board[i]) + ' ', end=' ')
+    print()
     
 def boggle_neighbors(n2, cache={}):
     """"Return a list of lists, where the i-th element is the list of indexes
@@ -642,7 +642,7 @@ class BoggleFinder:
 
     def words(self): 
         "The words found."
-        return self.found.keys()
+        return list(self.found.keys())
 
     scores = [0, 0, 0, 0, 1, 2, 3, 5] + [11] * 100
 
@@ -668,7 +668,7 @@ def boggle_hill_climbing(board=None, ntimes=100, print_it=True):
         new = len(finder.set_board(board))
         if new > best:
             best = new
-            print best, _, board
+            print(best, _, board)
         else:
             board[i] = oldc ## Change back
     if print_it:

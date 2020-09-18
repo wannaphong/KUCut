@@ -16,10 +16,10 @@ Then we implement various functions for doing logical inference:
     ...
 """
 
-from __future__ import generators
+
 import re
-import agents
-from utils import *
+from . import agents
+from .utils import *
 
 #______________________________________________________________________________
 
@@ -42,7 +42,7 @@ class KB:
         """Ask returns a substitution that makes the query true, or
         it returns False. It is implemented in terms of ask_generator."""
         try: 
-            return self.ask_generator(query).next()
+            return next(self.ask_generator(query))
         except StopIteration:
             return False
 
@@ -149,7 +149,7 @@ class Expr:
         "Op is a string or number; args are Exprs (or are coerced to Exprs)."
         assert isinstance(op, str) or (isnumber(op) and not args)
         self.op = num_or_str(op)
-        self.args = map(expr, args) ## Coerce args to Exprs
+        self.args = list(map(expr, args)) ## Coerce args to Exprs
 
     def __call__(self, *args):
         """Self must be a symbol with no args, such as Expr('F').  Create a new
@@ -237,8 +237,8 @@ def is_prop_symbol(s):
 
 
 ## Useful constant Exprs used in examples and code:
-TRUE, FALSE, ZERO, ONE, TWO = map(Expr, ['TRUE', 'FALSE', 0, 1, 2]) 
-A, B, C, F, G, P, Q, x, y, z  = map(Expr, 'ABCFGPQxyz') 
+TRUE, FALSE, ZERO, ONE, TWO = list(map(Expr, ['TRUE', 'FALSE', 0, 1, 2])) 
+A, B, C, F, G, P, Q, x, y, z  = list(map(Expr, 'ABCFGPQxyz')) 
 
 #______________________________________________________________________________
 
@@ -319,7 +319,7 @@ def pl_true(exp, model={}):
     elif op == '^':
         return pt != qt
     else:
-        raise ValueError, "illegal operator in logic expression" + str(exp)
+        raise ValueError("illegal operator in logic expression" + str(exp))
 
 
 #______________________________________________________________________________
@@ -438,7 +438,7 @@ def eliminate_implications(s):
     that is equivalent to s, but has only &, |, and ~ as logical operators.
     Ex: eliminate_implications(A >> (~B << C)) ==> ((~B | ~C) | ~A)"""
     if not s.args or is_symbol(s.op): return s     ## (Atoms are unchanged.)
-    args = map(eliminate_implications, s.args)
+    args = list(map(eliminate_implications, s.args))
     a, b = args[0], args[-1]
     if s.op == '>>':
         return (b | ~a)
@@ -457,13 +457,13 @@ def move_not_inwards(s):
         NOT = lambda b: move_not_inwards(~b)
         a = s.args[0]
         if a.op == '~': return move_not_inwards(a.args[0]) # ~~A ==> A
-        if a.op =='&': return NaryExpr('|', *map(NOT, a.args))
-        if a.op =='|': return NaryExpr('&', *map(NOT, a.args))
+        if a.op =='&': return NaryExpr('|', *list(map(NOT, a.args)))
+        if a.op =='|': return NaryExpr('&', *list(map(NOT, a.args)))
         return s
     elif is_symbol(s.op) or not s.args:
         return s
     else:
-        return Expr(s.op, *map(move_not_inwards, s.args))
+        return Expr(s.op, *list(map(move_not_inwards, s.args)))
 
 def distribute_and_over_or(s):
     """Given a sentence s consisting of conjunctions and dijunctions of literals,
@@ -479,7 +479,7 @@ def distribute_and_over_or(s):
         else: rest = NaryExpr('|', *others)
         return NaryExpr('&', *[(c | rest) for c in conj.args])
     elif s.op == '&':
-        return NaryExpr('&', *map(distribute_and_over_or, s.args))
+        return NaryExpr('&', *list(map(distribute_and_over_or, s.args)))
     else:
         return s
 
@@ -633,7 +633,7 @@ def diff(y, x):
 
 def simp(x):
     if not x.args: return x
-    args = map(simp, x.args)
+    args = list(map(simp, x.args))
     u, op, v = args[0], x.op, args[-1]
     if op == '+': 
         if v == ZERO: return u

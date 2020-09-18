@@ -1,10 +1,11 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-from wordcut import *
+from .wordcut import *
 import os.path
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
+from functools import reduce
 
 class MyXMLParser(HTMLParser):
 	def __init__(self, seg):
@@ -61,12 +62,12 @@ def cutstring(text):
 
 
 	## check unicode and convert to cp874
-	if isinstance(text,unicode):
+	if isinstance(text,str):
 		text = text.encode('cp874')
 	else:
 		try:
 			text = text.decode('utf8').encode('cp874')
-		except Exception,e:
+		except Exception as e:
 			pass
 
 	## process segmentation
@@ -142,7 +143,7 @@ def cutfile():
 
 	
 	if options.DO_TIMER:
-		print 'start:', time.ctime()
+		print('start:', time.ctime())
 
 	if len(args) != 1:
 		opt_parser.error('no input file')
@@ -163,31 +164,31 @@ def cutfile():
 	inputfile = args[0]
 	
 	if not os.path.exists(lexicon_file):
-		print 'The file "%s" does not exist' % (lexicon_file)
+		print('The file "%s" does not exist' % (lexicon_file))
 		sys.exit(1)
 	lexiconDict = Dictionary(lexicon_file)
 
 	if not os.path.exists(syllable_file):
-		print 'The file "%s" does not exist' % (syllable_file)
+		print('The file "%s" does not exist' % (syllable_file))
 		sys.exit(1)
 	syllableDict = Dictionary(syllable_file)
 
 	if not os.path.exists(database_file):
-		print 'The file "%s" does not exist' % (database_file)
+		print('The file "%s" does not exist' % (database_file))
 		sys.exit(1)
 
 	if not os.path.exists(prohibit_file):
-		print 'The file "%s" does not exist' % (prohibit_file)
+		print('The file "%s" does not exist' % (prohibit_file))
 		sys.exit(1)
 		
 	hidden_file = os.path.join(HOME,'dict/hidden.txt')
 	if not os.path.exists(hidden_file):
-		print 'The file "%s" does not exist' % (hidden_file)
+		print('The file "%s" does not exist' % (hidden_file))
 		sys.exit(1)
 
 	totalDict_file = os.path.join(HOME,'dict/totalDict.txt')
 	if not os.path.exists(totalDict_file):
-		print 'The file "%s" does not exist' % (totalDict_file)
+		print('The file "%s" does not exist' % (totalDict_file))
 		sys.exit(1)
 		
 		
@@ -247,7 +248,7 @@ def cutfile():
 						output.write('\n')
 							
 				if options.DO_TIMER:
-					print 'end:', time.ctime()
+					print('end:', time.ctime())
 					
 			output.close()
 			if options.DO_DEBUG:
@@ -300,7 +301,7 @@ def cutfile():
 #			print ambiguous_list
 	
 		if options.DO_TIMER:
-			print 'end:', time.ctime()
+			print('end:', time.ctime())
 		if not options.DO_STDOUT:
 			output.close()
 		if options.DO_DEBUG:
