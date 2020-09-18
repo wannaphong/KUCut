@@ -4,7 +4,7 @@
 import math,sys,string,re,bsddb,time,os.path,random,pickle
 import optparse
 
-from . import AIMA.text
+from AIMA import text
 from functools import reduce
     
 class NthGram(AIMA.text.NgramTextModel):
