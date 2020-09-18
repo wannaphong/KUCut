@@ -3,9 +3,7 @@ We include it for those who have not upgraded to 2.3 yet.
 We've tested with 2.2, and 2.1 should also work."""
 
 from __future__ import generators
-from __future__ import absolute_import
 import operator
-from functools import reduce
 
 try: bool
 except:
@@ -36,7 +34,7 @@ except:
         i = 0
         it = iter(collection)
         while 1:
-            yield (i, next(it))
+            yield (i, it.next())
             i += 1
     
 class Set:
@@ -52,7 +50,7 @@ class Set:
         return element in self.dict
 
     def __getitem__(self, i):
-        return list(self.dict.items())[i]
+        return self.dict.items()[i]
 
     def add(self, element):
         self.dict[element] = 1

@@ -50,10 +50,7 @@ with docex's 1-line:
     Ex: len('abc') ==> 3; len([]) ==> 0; len(5) raises TypeError
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
 import re, sys, types
-from six.moves import map
 
 class Test:
     """A class to run test examples written in docstrings or in _docex."""
@@ -61,7 +58,7 @@ class Test:
     def __init__(self, modules=None, html=1, out=None,
                  title='Docex Example Output'):
         if modules is None:
-            modules = list(sys.modules.values())
+            modules = sys.modules.values()
         self.passed = self.failed = 0;
         self.dictionary = {}
         self.already_seen = {}
@@ -94,11 +91,11 @@ class Test:
              '(<a href="%s.html">.html</a>, <a href="%s.py">.py</a>)</h1><pre>'
              % (name, name))
             self.run_docstring(object)
-            names = list(object.__dict__.keys())
+            names = object.__dict__.keys()
             names.sort()
             for name in names:
                 val = object.__dict__[name]
-                if isinstance(val, type):
+                if isinstance(val, types.ClassType):
                     self.run_class(val)
                 elif isinstance(val, types.ModuleType):
                     pass
@@ -109,7 +106,7 @@ class Test:
         """Run the docstrings, and then all members of the class."""
         if not self.seen(object):
             self.run_docstring(object)
-            names = list(object.__dict__.keys())
+            names = object.__dict__.keys()
             names.sort()
             for name in names:
                 self.run_docstring(object.__dict__[name])
@@ -129,7 +126,7 @@ class Test:
         if not teststr: return
         teststr = teststr.strip()
         if teststr.find('\n') > -1:
-            list(map(self.run_string, teststr.split('\n')))
+            map(self.run_string, teststr.split('\n'))
         elif teststr == '' or teststr.startswith('#'):
             self.writeln(teststr)
         elif teststr.find('; ') > -1:
@@ -144,7 +141,7 @@ class Test:
             try:
                 self.evaluate(teststr)
             except SyntaxError:
-                exec(teststr, self.dictionary)
+                exec teststr in self.dictionary
 
     def evaluate(self, teststr, resultstr=None):
         "Eval teststr and check if resultstr (if given) evals to the same."
@@ -164,7 +161,7 @@ class Test:
         self.writeln('>>> ' + teststr)
         except_class = eval(exceptionstr, self.dictionary)
         try:
-            exec(teststr, self.dictionary)
+            exec teststr in self.dictionary
         except except_class:
             self.writeln('# raises %s as expected' % exceptionstr)
             self.passed += 1
@@ -182,14 +179,14 @@ class Test:
         s = str(s)
         if self.html:
             s = s.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
-            print('%s%s%s' % (before, s, after))
+            print '%s%s%s' % (before, s, after)
         else:
-            print(s)
+            print s
 
     def seen(self, object):
         """Return true if this object has been seen before.
         In any case, record that we have seen it."""
-        result = id(object) in self.already_seen
+        result = self.already_seen.has_key(id(object))
         self.already_seen[id(object)] = 1
         return result
 
@@ -206,7 +203,7 @@ def main(args):
         for file in glob.glob(arg):
             if file.endswith('.py'):
                 modules.append(__import__(file[:-3]))
-    print(Test(modules, html=html, out=out))
+    print Test(modules, html=html, out=out)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

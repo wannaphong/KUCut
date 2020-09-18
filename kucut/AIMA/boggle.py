@@ -1,11 +1,7 @@
 """Generate high-scoring boards in the game of Boggle.  A good domain for
 iterative-repair and related search tehniques, as suggested by Justin Boyan."""
 
-from __future__ import absolute_import
-from __future__ import print_function
 import random, time, bisect, math, string
-from six.moves import map
-from six.moves import range
 
 ##_____________________________________________________________________________
 
@@ -18,7 +14,7 @@ def random_board(n=4):
     "Return a random board of size n x n."
     cubes = [cubes16[i % 16] for i in range(n*n)]
     random.shuffle(cubes)
-    return list(map(random.choice, cubes))
+    return map(random.choice, cubes)
 
 def board(str):
     "Return a board made from the letters in str."
@@ -31,10 +27,10 @@ boyan_best = board('RSTCS DEIAE GNLRP EATES MSSID')
 def print_board(board):
     n2 = len(board); n = exact_sqrt(n2)
     for i in range(n2):
-        if i % n == 0: print()
-        if board[i] == 'Q': print('Qu', end=' ')
-        else: print(str(board[i]) + ' ', end=' ')
-    print()
+        if i % n == 0: print
+        if board[i] == 'Q': print 'Qu',
+        else: print str(board[i]) + ' ',
+    print
     
 def compute_neighbors(n2, cache={}):
     if cache.get(n2):
@@ -141,7 +137,7 @@ class BoggleFinder:
         return len(self.found)
 
     def words(self): 
-        return list(self.found.keys())
+        return self.found.keys()
 
     scores = [0, 0, 0, 0, 1, 2, 3, 5] + [11] * 100
 
@@ -160,7 +156,7 @@ def boggle_hill_climbing(n=5, ntimes=1000, print_it=True):
         i, c = mutate(board)
         new = len(finder.set_board(board))
         if new > best:
-            print(best, new)
+            print best, new
             best = new
         else:
             board[i] = c ## Change back

@@ -1,13 +1,7 @@
 """Learn to estimate functions  from examples. (Chapters 18-20)"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from .utils import *
+from utils import *
 import agents, random, os.path, operator
-from six.moves import map
-from six.moves import range
-from six.moves import zip
-from functools import reduce
 
 #______________________________________________________________________________
 
@@ -74,10 +68,10 @@ class DataSet:
             self.examples = parse_csv(DataFile(name+'.csv').read())
         else:
             self.examples = examples
-        list(map(self.check_example, self.examples))
+        map(self.check_example, self.examples)
         # Attrs are the indicies of examples, unless otherwise stated.
         if not attrs and self.examples:
-            attrs = list(range(len(self.examples[0])))
+            attrs = range(len(self.examples[0]))
         self.attrs = attrs
         # Initialize .attrnames from string, list, or by default
         if isinstance(attrnames, str): 
@@ -93,14 +87,14 @@ class DataSet:
         to not put use in inputs. Attributes can be -n .. n, or an attrname.
         Also computes the list of possible values, if that wasn't done yet."""
         self.target = self.attrnum(target)
-        exclude = list(map(self.attrnum, exclude))
+        exclude = map(self.attrnum, exclude)
         if inputs:
             self.inputs = removall(self.target, inputs)
         else:
             self.inputs = [a for a in self.attrs
                            if a is not self.target and a not in exclude]
         if not self.values:
-            self.values = list(map(unique, list(zip(*self.examples))))
+            self.values = map(unique, zip(*self.examples))
 
     def add_example(self, example):
         """Add an example to the list of examples, checking it first."""
@@ -143,7 +137,7 @@ def parse_csv(input, delim=','):
     [[1, 2, 3], [0, 2, 'na']]
     """
     lines = [line for line in input.splitlines() if line.strip() is not '']
-    return [list(map(num_or_str, line.split(delim))) for line in lines]
+    return [map(num_or_str, line.split(delim)) for line in lines]
 
 def rms_error(predictions, targets):
     return math.sqrt(ms_error(predictions, targets))
@@ -290,13 +284,13 @@ class DecisionTree:
 
     def display(self, indent=0):
         name = self.attrname
-        print('Test', name)
+        print 'Test', name
         for (val, subtree) in self.branches.items():
-            print(' '*4*indent, name, '=', val, '==>', end=' ')
+            print ' '*4*indent, name, '=', val, '==>',
             if isinstance(subtree, DecisionTree):
                 subtree.display(indent+1)
             else:
-                print('RESULT = ', subtree)
+                print 'RESULT = ', subtree
 
     def __repr__(self):
         return 'DecisionTree(%r, %r, %r)' % (
@@ -387,7 +381,7 @@ class NeuralNetLearner(Learner):
    """Layered feed-forward network."""
 
    def __init__(self, sizes):
-      self.activations = [[0.0 for i in range(n)] for n in sizes]
+      self.activations = map(lambda n: [0.0 for i in range(n)], sizes)
       self.weights = []
 
    def train(self, dataset):
@@ -440,10 +434,10 @@ def test(learner, dataset, examples=None, verbose=0):
         if output == desired:
             right += 1
             if verbose >= 2:
-               print('   OK: got %s for %s' % (desired, example))
+               print '   OK: got %s for %s' % (desired, example)
         elif verbose:
-            print('WRONG: got %s, expected %s for %s' % (
-               output, desired, example))
+            print 'WRONG: got %s, expected %s for %s' % (
+               output, desired, example)
     return right / len(examples)
 
 def train_and_test(learner, dataset, start, end):
@@ -479,7 +473,7 @@ def leave1out(learner, dataset):
 
 def learningcurve(learner, dataset, trials=10, sizes=None):
     if sizes == None:
-        sizes = list(range(2, len(dataset.examples)-10, 2))
+        sizes = range(2, len(dataset.examples)-10, 2)
     def score(learner, size):
         random.shuffle(dataset.examples)
         return train_and_test(learner, dataset, 0, size)
@@ -533,7 +527,7 @@ def SyntheticRestaurant(n=20):
                              {'No': 'Yes', 'Yes':
                               T('Raining', {'No': 'No', 'Yes': 'Yes'})})})})})
     def gen():
-        example =  list(map(random.choice, restaurant.values))
+        example =  map(random.choice, restaurant.values)
         example[restaurant.target] = tree.predict(example)
         return example
     return RestaurantDataSet([gen() for i in range(n)])

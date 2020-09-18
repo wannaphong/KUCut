@@ -1,9 +1,8 @@
 """Reinforcement Learning (Chapter 21)
 """
 
-from __future__ import absolute_import
-from .utils import *
-from . import agents
+from utils import *
+import agents
 
 class PassiveADPAgent(agents.Agent):
     """Passive (non-learning) agent that uses adaptive dynamic programming

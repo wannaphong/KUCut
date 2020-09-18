@@ -21,13 +21,8 @@ EnvFrame ## A graphical representation of the Environment
 
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-from .utils import *
+from utils import *
 import random, copy
-from six.moves import range
-from six.moves import zip
-from six.moves import input
 
 #______________________________________________________________________________
 
@@ -61,7 +56,7 @@ class Agent(Object):
 
     def __init__(self):
         def program(percept):
-            return input('Percept=%s; action? ' % percept)
+            return raw_input('Percept=%s; action? ' % percept)
         self.program = program
         self.alive = True
 
@@ -71,7 +66,7 @@ def TraceAgent(agent):
     old_program = agent.program
     def new_program(percept):
         action = old_program(percept)
-        print('%s perceives %s and does %s' % (agent, percept, action))
+        print '%s perceives %s and does %s' % (agent, percept, action)
         return action
     agent.program = new_program
     return agent
@@ -112,8 +107,7 @@ class ReflexVacuumAgent(Agent):
 
     def __init__(self):
         Agent.__init__(self)
-        def program(xxx_todo_changeme):
-            (location, status) = xxx_todo_changeme
+        def program((location, status)):
             if status == 'Dirty': return 'Suck'
             elif location == loc_A: return 'Right'
             elif location == loc_B: return 'Left'
@@ -146,9 +140,8 @@ class ModelBasedVacuumAgent(Agent):
     def __init__(self):
         Agent.__init__(self)
         model = {loc_A: None, loc_B: None}
-        def program(xxx_todo_changeme1):
+        def program((location, status)):
             "Same as ReflexVacuumAgent, except if everything is clean, do NoOp"
-            (location, status) = xxx_todo_changeme1
             model[location] = status ## Update the model here
             if model[loc_A] == model[loc_B] == 'Clean': return 'NoOp'
             elif status == 'Dirty': return 'Suck'

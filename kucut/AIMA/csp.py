@@ -1,12 +1,9 @@
 """CSP (Constraint Satisfaction Problems) problems and solvers. (Chapter 5)."""
 
 from __future__ import generators
-from __future__ import absolute_import
-from __future__ import print_function
-from .utils import *
-from . import search
+from utils import *
+import search
 import types
-from six.moves import range
 
 class CSP(search.Problem):
     """This class describes finite-domain Constraint Satisfaction Problems.
@@ -45,7 +42,7 @@ class CSP(search.Problem):
 
     def __init__(self, vars, domains, neighbors, constraints):
         "Construct a CSP problem. If vars is empty, it becomes domains.keys()."
-        vars = vars or list(domains.keys())
+        vars = vars or domains.keys()
         update(self, vars=vars, domains=domains,
                neighbors=neighbors, constraints=constraints,
                initial={}, curr_domains=None, pruned=None, nassigns=0)
@@ -97,7 +94,7 @@ class CSP(search.Problem):
     def display(self, assignment):
         "Show a human-readable representation of the CSP."
         # Subclasses can print in a prettier way, or display with a GUI
-        print('CSP:', self, 'with assignment:', assignment)
+        print 'CSP:', self, 'with assignment:', assignment
 
     ## These methods are for the tree and graph search interface:
 
@@ -269,7 +266,7 @@ def MapColoringCSP(colors, neighbors):
 
     if isinstance(neighbors, str):
         neighbors = parse_neighbors(neighbors)     
-    return CSP(list(neighbors.keys()), UniversalDict(colors), neighbors,
+    return CSP(neighbors.keys(), UniversalDict(colors), neighbors,
                different_values_constraint)
 
 def parse_neighbors(neighbors, vars=[]):
@@ -336,8 +333,8 @@ class NQueensCSP(CSP):
     """
     def __init__(self, n):
         """Initialize data structures for n Queens."""
-        CSP.__init__(self, list(range(n)), UniversalDict(list(range(n))),
-                     UniversalDict(list(range(n))), queen_constraint)
+        CSP.__init__(self, range(n), UniversalDict(range(n)),
+                     UniversalDict(range(n)), queen_constraint)
         update(self, rows=[0]*n, ups=[0]*(2*n - 1), downs=[0]*(2*n - 1))
 
     def nconflicts(self, var, val, assignment): 
@@ -380,13 +377,13 @@ class NQueensCSP(CSP):
                 if assignment.get(var,'') == val: ch ='Q'
                 elif (var+val) % 2 == 0: ch = '.'
                 else: ch = '-'
-                print(ch, end=' ')
-            print('    ', end=' ')
+                print ch,
+            print '    ',
             for var in range(n):
                 if assignment.get(var,'') == val: ch ='*'
                 else: ch = ' '
-                print(str(self.nconflicts(var, val, assignment))+ch, end=' ') 
-            print()        
+                print str(self.nconflicts(var, val, assignment))+ch, 
+            print        
 
 #______________________________________________________________________________
 # The Zebra Puzzle
@@ -401,7 +398,7 @@ def Zebra():
     vars = Colors + Pets + Drinks + Countries + Smokes
     domains = {}
     for var in vars:
-        domains[var] = list(range(1, 6))
+        domains[var] = range(1, 6)
     domains['Norwegian'] = [1]
     domains['Milk'] = [3]
     neighbors = parse_neighbors("""Englishman: Red;
@@ -443,10 +440,10 @@ def solve_zebra(algorithm=min_conflicts, **args):
     z = Zebra()
     ans = algorithm(z, **args)
     for h in range(1, 6):
-        print('House', h, end=' ')
+        print 'House', h,
         for (var, val) in ans.items():
-            if val == h: print(var, end=' ')
-        print()
+            if val == h: print var,
+        print
     return ans['Zebra'], ans['Water'], z.nassigns, ans,
                
     

@@ -1,7 +1,6 @@
 #-*- coding:utf-8 -*-
 
-from __future__ import absolute_import
-from .simple_kucut_wrapper import SimpleKucutWrapper as Kucut
+from simple_kucut_wrapper import SimpleKucutWrapper as Kucut
 import cherrypy
 import re
 try:

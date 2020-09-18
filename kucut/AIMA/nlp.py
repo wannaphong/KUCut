@@ -1,9 +1,6 @@
 """A chart parser and some grammars. (Chapter 22)"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from .utils import *
-from six.moves import range
+from utils import *
 
 #______________________________________________________________________________
 # Grammars and Lexicons
@@ -140,7 +137,7 @@ class Chart:
         if edge not in self.chart[end]:
             self.chart[end].append(edge)
             if self.trace:
-                print('%10s: added %s' % (caller(2), edge))
+                print '%10s: added %s' % (caller(2), edge)
             if not expects:
                 self.extender(edge)
             else:
@@ -152,9 +149,8 @@ class Chart:
             if Bb and self.grammar.isa(word, Bb[0]):
                 self.add_edge([i, j+1, A, alpha + [(Bb[0], word)], Bb[1:]])
 
-    def predictor(self, xxx_todo_changeme):
+    def predictor(self, (i, j, A, alpha, Bb)):
         "Add to chart any rules for B that could help extend this edge."
-        (i, j, A, alpha, Bb) = xxx_todo_changeme
         B = Bb[0]
         if B in self.grammar.rules:
             for rhs in self.grammar.rewrites_for(B):

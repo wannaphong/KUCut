@@ -1,21 +1,19 @@
 #!/usr/bin/python
 
-from __future__ import absolute_import
-from __future__ import print_function
 import os,os.path,sys
 
 
 def error(msg):
-	print(msg)
+	print msg
 	sys.exit(1)
 
 def warning(msg):
-	print(msg, end=' ')
+	print msg,
 	ans = sys.__stdin__.readline()
 	return ans
 
 def getpath(msg,default):
-	print('%s \n\t(default = %s) ' % (msg,default), end=' ')
+	print '%s \n\t(default = %s) ' % (msg,default),
 	path = sys.__stdin__.readline()
 	if not os.path.abspath(path):
 		error('%s is not absolute path' % (path))
@@ -30,7 +28,7 @@ def getpath(msg,default):
 			try:
 				os.makedirs(path)
 			except OSError:
-				print('\nAbort installation : You do not permit to create this directory')
+				print '\nAbort installation : You do not permit to create this directory'
 				sys.exit(1)
 		else:
 			sys.exit(1)
@@ -43,20 +41,20 @@ def unpack(tgz_file, target_dir):
 	options = ('-xvzk --directory="%s" --file="%s"' % (target_dir, tgz_file))
 	tar_cmd = 'tar' + ' ' + options
 	redirect_cmd = 'sh -c "export UMASK=0022; %s 2>&1"' % tar_cmd
-	print(redirect_cmd)
+	print redirect_cmd
 	child_out = os.popen(redirect_cmd, 'r')
 	cmd = 'chown -R %s.%s %s' % (str(uid),str(gid), target_dir)
 	if os.system(cmd) != 0:
 		error('Error: Failed to change file owner in installation.')
 	else:
-		print('Set ownership of installation to user=%s and group=%s' % (str(uid),str(gid)))
+		print 'Set ownership of installation to user=%s and group=%s' % (str(uid),str(gid))
 	try:
 		line = child_out.readline()
 		while line != '':
 			if line[:len('tar:')] == 'tar:':
 				fields = line.split(':')
 				if len(fields) == 4 and fields[3].strip() == 'File exists':
-					print('The file "%s" already exists and won\' be overwritten' % (fields[1].strip()))
+					print 'The file "%s" already exists and won\' be overwritten' % (fields[1].strip())
 			line = child_out.readline()
 	except OSError:
 		error('Failed to expand %s' % (tgz_file))
@@ -78,7 +76,7 @@ def create_execute_file(home_path,exec_file):
 	if os.system(cmd) != 0:
 		error('Error: Failed to change file mode in installation.')
 	else:
-		print('Set mode of file %s to 755' % (exec_full))
+		print 'Set mode of file %s to 755' % (exec_full)
 		
 	fd_exec.close()
 				  
@@ -95,7 +93,7 @@ def create_link_file(home_path,exec_file,bin_path):
 	if os.system(cmd) != 0:
 		error('Error: Failed to create link to execute file')
 	else:
-		print('\nCreate link to execute file %s' % (exec_file))
+		print '\nCreate link to execute file %s' % (exec_file)
 	
 inst_path = getpath('Where do you want to install the support files for KU Wordcut?','/usr/local/lib/kucut-1.0')
 unpack('kucut.tar.gz',inst_path)
@@ -103,4 +101,4 @@ create_execute_file(inst_path,'kucut')
 bin_path = getpath('Where do you want to install execute file for KU Wordcut?','/usr/local/bin')
 create_link_file(inst_path,'kucut',bin_path)
 
-print('Installation success.')
+print 'Installation success.'
