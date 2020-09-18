@@ -9,5 +9,5 @@ for line in map(str.strip,lines):
 		tmp.append(line)
 
 for word in tmp:
-	print word
+	print(word)
 	
