@@ -2,6 +2,7 @@
 """
 
 from __future__ import generators
-from utils import *
-import agents
+from __future__ import absolute_import
+from .utils import *
+from . import agents
 import math, random, sys, time, bisect, string

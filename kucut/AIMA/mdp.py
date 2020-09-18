@@ -6,7 +6,9 @@ as a dictionary of {state:action} pairs, and a Utility function as a
 dictionary of {state:number} pairs.  We then define the value_itteration 
 and policy_iteration algorithms."""
 
-from utils import *
+from __future__ import absolute_import
+from .utils import *
+from six.moves import range
 
 class MDP:
     """A Markov Decision Process, defined by an initial state, transition model,

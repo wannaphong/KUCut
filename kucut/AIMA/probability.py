@@ -1,10 +1,12 @@
 """Probability models. (Chapter 13-15)
 """
 
-from utils import *
-from logic import extend
-import agents
+from __future__ import absolute_import
+from .utils import *
+from .logic import extend
+from . import agents
 import bisect, random
+from six.moves import zip
 
 #______________________________________________________________________________
 

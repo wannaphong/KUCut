@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from distutils.core import setup
 setup(name='kucut',
       version='1.4.3b2',

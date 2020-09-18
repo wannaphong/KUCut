@@ -1,10 +1,13 @@
 #! /usr/bin/python
 #-*- coding:utf8 -*-
 
-from wordcut import *
+from __future__ import absolute_import
+from __future__ import print_function
+from .wordcut import *
 
 import os.path, sys
-import SimpleXMLRPCServer
+import six.moves.xmlrpc_server
+import six
 
 global seq
 
@@ -39,7 +42,7 @@ def cutstring(text):
     isuni = False
 
     ## check unicode and convert to cp874
-    if isinstance(text,unicode):
+    if isinstance(text,six.text_type):
         isuni = True
         text = text.encode('cp874')
 
@@ -70,13 +73,13 @@ def cutsentence(text):
     isuni = False
 
     ## check unicode and convert to cp874
-    if isinstance(text,unicode):
+    if isinstance(text,six.text_type):
         isuni = True
         text = text.encode('cp874')
     else:
         try:
             text = text.decode('utf8').encode('cp874')
-        except Exception,e:
+        except Exception as e:
             pass
 
     ## process segmentation
@@ -102,24 +105,24 @@ def hello(name):
 port = 8089
 
 if len(sys.argv) == 1:
-    print 'default port 8089 is used'
+    print('default port 8089 is used')
 else:
     try:
         port = int(sys.argv[1])
-    except ValueError,e:
-        print 'invalid port'
+    except ValueError as e:
+        print('invalid port')
         sys.exit(1)
 
 ## init wordcut object
 init()
 
-server = SimpleXMLRPCServer.SimpleXMLRPCServer(('localhost',port))
+server = six.moves.xmlrpc_server.SimpleXMLRPCServer(('localhost',port))
 server.register_function(cutstring)
 server.register_function(cutsentence)
 server.register_function(hello)
 server.register_introspection_functions()
 
-print 'server is started at port %d' % (port)
+print('server is started at port %d' % (port))
 
 ## start server
 server.serve_forever()

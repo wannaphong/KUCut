@@ -1,12 +1,17 @@
 """Provide some widely useful utilities. Safe for "from utils import *"."""
 
 from __future__ import generators
+from __future__ import absolute_import
+from __future__ import print_function
 import operator, math, random, copy, sys, os.path, bisect
+from six.moves import map
+from six.moves import zip
+from functools import reduce
 
 if sys.version_info >= (2, 3):
     from sets import *
 else:
-    from python23 import *
+    from .python23 import *
 
 #______________________________________________________________________________
 # Simple Data Structures: infinity, Dict, Struct
@@ -252,14 +257,14 @@ def histogram(values, mode=0, bin_function=None):
     """Return a list of (value, count) pairs, summarizing the input values.
     Sorted by increasing value, or if mode=1, by decreasing count.
     If bin_function is given, map it over values first."""
-    if bin_function: values = map(bin_function, values)
+    if bin_function: values = list(map(bin_function, values))
     bins = {}
     for val in values:
         bins[val] = bins.get(val, 0) + 1
     if mode:
-        return sort(bins.items(), lambda x,y: cmp(y[1],x[1]))
+        return sort(list(bins.items()), lambda x,y: cmp(y[1],x[1]))
     else:
-        return sort(bins.items())
+        return sort(list(bins.items()))
 
 def log2(x):
     """Base 2 logarithm.
@@ -359,12 +364,16 @@ def turn_right(orientation):
 def turn_left(orientation):
     return orientations[(orientations.index(orientation)+1) % len(orientations)]
 
-def distance((ax, ay), (bx, by)):
+def distance(xxx_todo_changeme, xxx_todo_changeme1):
     "The distance between two (x, y) points."
+    (ax, ay) = xxx_todo_changeme
+    (bx, by) = xxx_todo_changeme1
     return math.hypot((ax - bx), (ay - by))
 
-def distance2((ax, ay), (bx, by)):
+def distance2(xxx_todo_changeme2, xxx_todo_changeme3):
     "The square of the distance between two (x, y) points."
+    (ax, ay) = xxx_todo_changeme2
+    (bx, by) = xxx_todo_changeme3
     return (ax - bx)**2 + (ay - by)**2
 
 def clip(vector, lowest, highest):
@@ -374,7 +383,7 @@ def clip(vector, lowest, highest):
     >>> clip((-1, 10), (0, 0), (9, 9))
     (0, 9)
     """
-    return type(vector)(map(min, map(max, vector, lowest), highest))
+    return type(vector)(list(map(min, list(map(max, vector, lowest)), highest)))
 #______________________________________________________________________________
 # Misc Functions
 
@@ -410,7 +419,7 @@ def memoize(fn, slot=None):
                 return val
     else:
         def memoized_fn(*args):
-            if not memoized_fn.cache.has_key(args):
+            if args not in memoized_fn.cache:
                 memoized_fn.cache[args] = fn(*args)
             return memoized_fn.cache[args]
         memoized_fn.cache = {}
@@ -456,18 +465,18 @@ def print_table(table, header=None, sep=' ', numfmt='%g'):
         table = [header] + table
     table = [[if_(isnumber(x), lambda: numfmt % x, x)  for x in row]
              for row in table]    
-    maxlen = lambda seq: max(map(len, seq))
-    sizes = map(maxlen, zip(*[map(str, row) for row in table]))
+    maxlen = lambda seq: max(list(map(len, seq)))
+    sizes = list(map(maxlen, list(zip(*[list(map(str, row)) for row in table]))))
     for row in table:
         for (j, size, x) in zip(justs, sizes, row):
-            print getattr(str(x), j)(size), sep,
-        print
+            print(getattr(str(x), j)(size), sep, end=' ')
+        print()
 
 def AIMAFile(components, mode='r'):
     "Open a file based at the AIMA root directory."
-    import utils
+    from . import utils
     dir = os.path.dirname(utils.__file__)
-    return open(apply(os.path.join, [dir] + components), mode)
+    return open(os.path.join(*[dir] + components), mode)
 
 def DataFile(name, mode='r'):
     "Return a file in the AIMA /data directory."
