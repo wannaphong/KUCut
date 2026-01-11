@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import math,sys,string,re,time,os.path,random,pickle
+from functools import reduce
 import optparse
 try:
     import dbm.gnu as gdbm
@@ -44,7 +45,7 @@ class Dictionary:
         this.extend(filename)
         
     def extend(this, filename):
-        lines = open(filename,'r').readlines()      
+        lines = open(filename,'r', encoding='iso-8859-11').readlines()      
         for line in lines:
             if line[0] != '#' or len(line.strip()) == 1:
                 token = line.split()
@@ -162,7 +163,7 @@ class GenSyllable:
         self.loadRules(rules_file)
     
     def loadRules(self, rules_file):
-        lines = open(rules_file).readlines()
+        lines = open(rules_file, encoding='iso-8859-11').readlines()
         stat = ''
 
         def mapVar(x):
@@ -256,18 +257,18 @@ class Segmentation:
 
         if database != None:
             try:
-                self.trigram = gdbm.open(database,'r')
-                self.corpus_size = int(self.trigram[b'unigrams' if isinstance(list(self.trigram.keys())[0], bytes) else 'unigrams'])
+                this.trigram = gdbm.open(database,'r')
+                this.corpus_size = int(this.trigram[b'unigrams' if isinstance(list(this.trigram.keys())[0], bytes) else 'unigrams'])
             except Exception as e:
                 # If gdbm doesn't work, try to open as a pickle file or skip
                 try:
                     with open(database, 'rb') as f:
-                        self.trigram = pickle.load(f)
-                    self.corpus_size = int(self.trigram['unigrams'])
+                        this.trigram = pickle.load(f)
+                    this.corpus_size = int(this.trigram['unigrams'])
                 except:
                     print(f"Warning: Could not load database {database}: {e}")
-                    self.trigram = {}
-                    self.corpus_size = 0
+                    this.trigram = {}
+                    this.corpus_size = 0
             
 
         this.gw = float(gw)
@@ -294,7 +295,8 @@ class Segmentation:
         this.IsComplete = 0
     
     def _getchargroup(this,c):
-        code = ord(c)
+        # In Python 3, if c is from a bytes object, it's already an int
+        code = c if isinstance(c, int) else ord(c)
         if code >= 224 and code <= 228:
             return 2
         elif code == 210 or code == 211 or code == 208:
@@ -987,7 +989,7 @@ class Segmentation:
                 print('encoding error:', line)
 
             if not self.quiet: print(line_count)
-            tokens = line.replace('+','<-plus->').strip().split()
+            tokens = line.replace(b'+',b'<-plus->').strip().split()
             tmp = []
             line_count += 1
 
@@ -1423,7 +1425,7 @@ class Segmentation:
 
 
     def loadProhibitPattern(self,prohibit_file):
-        lines = open(prohibit_file,'r').readlines()
+        lines = open(prohibit_file,'r', encoding='iso-8859-11').readlines()
         for line in lines:
             self.prohibitPattern[line.strip()] = 1
 

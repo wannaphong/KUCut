@@ -4,7 +4,6 @@ The way to use this code is to subclass Problem to create a class of problems,
 then create problem instances and solve them with calls to the various search
 functions."""
 
-from __future__ import generators
 from .utils import *
 from . import agents
 import math, random, sys, time, bisect, string
@@ -342,8 +341,8 @@ class Graph:
 
     def make_undirected(self):
         "Make a digraph into an undirected graph by adding symmetric edges."
-        for a in self.dict.keys():
-            for (b, distance) in self.dict[a].items():
+        for a in list(self.dict.keys()):
+            for (b, distance) in list(self.dict[a].items()):
                 self.connect1(b, a, distance)
 
     def connect(self, A, B, distance=1):
@@ -526,8 +525,8 @@ def print_boggle(board):
     n2 = len(board); n = exact_sqrt(n2)
     for i in range(n2):
         if i % n == 0: print
-        if board[i] == 'Q': print('Qu'),
-        else: print str(board[i]) + ' ',
+        if board[i] == 'Q': print('Qu',)
+        else: print(str(board[i]) + ' ',)
     print
     
 def boggle_neighbors(n2, cache={}):

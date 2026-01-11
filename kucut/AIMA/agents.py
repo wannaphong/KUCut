@@ -66,10 +66,10 @@ def TraceAgent(agent):
     old_program = agent.program
     def new_program(percept):
         action = old_program(percept)
-        print('%s perceives %s and does %s') % (agent, percept, action)
+        print('%s perceives %s and does %s' % (agent, percept, action))
         return action
-    agent.program = new_program
-    return agent
+        agent.program = new_program
+        return agent
 
 #______________________________________________________________________________
 
@@ -167,10 +167,10 @@ class Environment:
     def __init__(self,):
         self.objects = []; self.agents = []
 
-    object_classes = [] ## List of classes that can go into environment
+        object_classes = [] ## List of classes that can go into environment
 
     def percept(self, agent):
-	"Return the percept that the agent sees at this point. Override this."
+        "Return the percept that the agent sees at this point. Override this."
         abstract
 
     def execute_action(self, agent, action):
@@ -178,12 +178,12 @@ class Environment:
         abstract
 
     def default_location(self, object):
-	"Default location to place a new object with unspecified location."
+        "Default location to place a new object with unspecified location."
         return None
 
     def exogenous_change(self):
-	"If there is spontaneous change in the world, override this."
-	pass
+        "If there is spontaneous change in the world, override this."
+        pass
 
     def is_done(self):
         "By default, we're done when we can't find a live agent."
@@ -192,32 +192,32 @@ class Environment:
         return True
 
     def step(self):
-	"""Run the environment for one time step. If the
-	actions and exogenous changes are independent, this method will
-	do.  If there are interactions between them, you'll need to
-	override this method."""
-	if not self.is_done():
+        """Run the environment for one time step. If the
+        actions and exogenous changes are independent, this method will
+        do.  If there are interactions between them, you'll need to
+        override this method."""
+        if not self.is_done():
             actions = [agent.program(self.percept(agent))
                        for agent in self.agents]
             for (agent, action) in zip(self.agents, actions):
-		self.execute_action(agent, action)
+                self.execute_action(agent, action)
             self.exogenous_change()
 
     def run(self, steps=1000):
-	"""Run the Environment for given number of time steps."""
-	for step in range(steps):
+        """Run the Environment for given number of time steps."""
+        for step in range(steps):
             if self.is_done(): return
             self.step()
 
     def add_object(self, object, location=None):
-	"""Add an object to the environment, setting its location. Also keep
-	track of objects that are agents.  Shouldn't need to override this."""
-	object.location = location or self.default_location(object)
-	self.objects.append(object)
-	if isinstance(object, Agent):
+        """Add an object to the environment, setting its location. Also keep
+        track of objects that are agents.  Shouldn't need to override this."""
+        object.location = location or self.default_location(object)
+        self.objects.append(object)
+        if isinstance(object, Agent):
             object.performance = 0
             self.agents.append(object)
-	return self
+        return self
     
 
 class XYEnvironment(Environment):
@@ -340,7 +340,7 @@ class VacuumEnvironment(XYEnvironment):
         XYEnvironment.__init__(self, width, height)
         self.add_walls()
 
-    object_classes = [Wall, Dirt, ReflexVacuumAgent, RandomVacuumAgent,
+        object_classes = [Wall, Dirt, ReflexVacuumAgent, RandomVacuumAgent,
                       TableDrivenVacuumAgent, ModelBasedVacuumAgent]
 
     def percept(self, agent):
@@ -398,7 +398,7 @@ class WumpusEnvironment(XYEnvironment):
     def __init__(self, width=10, height=10):
         XYEnvironment.__init__(self, width, height)
         self.add_walls()
-    ## Needs a lot of work ...
+        ## Needs a lot of work ...
 
     
 #______________________________________________________________________________
@@ -502,17 +502,14 @@ class EnvFrame(tk.Frame):
             self.after(ms, self.background_run)
 
     def run(self):
-        print('run')
-        self.running = 1
+        print('run')        self.running = 1
         self.background_run()
 
     def stop(self):
-        print('stop')
-        self.running = 0
+        print('stop')        self.running = 0
         
     def left(self, event):
-        print('left at '), event.x/50, event.y/50
-
+        print('left at ', event.x/50, event.y/50)
     def edit_objects(self, event):
         """Choose an object within radius and edit its fields."""
         pass
