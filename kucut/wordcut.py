@@ -81,13 +81,16 @@ class Dictionary:
             this.dict[key1] = {key2:{key3:{word:tag}}}
         
     def contains(this,word):
-        key1 = word[0]
-        key2,key3 = '',''
+        # Convert bytes to string if needed
+        if isinstance(word, bytes):
+            try:
+                word = word.decode('iso-8859-11')
+            except:
+                return 0
         
-        if len(word) > 1:
-            key2 = word[1]
-        if len(word) > 2:
-            key3 = word[2]
+        key1 = word[0] if len(word) > 0 else ''
+        key2 = word[1] if len(word) > 1 else ''
+        key3 = word[2] if len(word) > 2 else ''
         
         if key1 not in this.dict:
             return 0
@@ -124,13 +127,16 @@ class Dictionary:
         return i
     
     def isprefix(this,word):
-        key1 = word[0]
-        key2,key3 = '',''
-
-        if len(word) > 1:
-            key2 = word[1]
-        if len(word) > 2:
-            key3 = word[2]
+        # Convert bytes to string if needed
+        if isinstance(word, bytes):
+            try:
+                word = word.decode('iso-8859-11')
+            except:
+                return 0
+        
+        key1 = word[0] if len(word) > 0 else ''
+        key2 = word[1] if len(word) > 1 else ''
+        key3 = word[2] if len(word) > 2 else ''
 
         if key1 not in this.dict:
             return 0
@@ -192,6 +198,12 @@ class GenSyllable:
                     self.rules.append(reduce(concat,tokens))
             
     def contains(this, word):
+        # Convert bytes to string if needed for regex matching
+        if isinstance(word, bytes):
+            try:
+                word = word.decode('iso-8859-11')
+            except:
+                return 0
         for rule in this.rules:
             reg = re.compile(rule).match(word)
             if reg is not None and reg.group() == word:
@@ -309,32 +321,33 @@ class Segmentation:
             return 5
 
     def presegment(this):
-        output = '' 
-        x = range(len(this.line))
-        for i in x:
+        output = b'' 
+        i = 0
+        while i < len(this.line):
             if len(this.line)-i>2 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==1 and this._getchargroup(this.line[i+2])==3:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>2 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==3 and this._getchargroup(this.line[i+2])==1:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>2 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==1 and this._getchargroup(this.line[i+2])==1:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>2 and this._getchargroup(this.line[i])==2 and this._getchargroup(this.line[i+1])==4 and this._getchargroup(this.line[i+2])==1:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>1 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==1:
-                output += (this.line[i]+this.line[i+1]+' ')
-                x[0:1]=[]
+                output += bytes([this.line[i], this.line[i+1]]) + b' '
+                i += 2
             elif len(this.line)-i>1 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==3:
-                output += (this.line[i]+this.line[i+1]+' ')
-                x[0:1]=[]
+                output += bytes([this.line[i], this.line[i+1]]) + b' '
+                i += 2
             elif len(this.line)-i>1 and this._getchargroup(this.line[i])==2 and this._getchargroup(this.line[i+1])==4:
-                output += (this.line[i]+this.line[i+1]+' ')
-                x[0:1]=[]
+                output += bytes([this.line[i], this.line[i+1]]) + b' '
+                i += 2
             else:
-                output += (this.line[i]+' ')
+                output += bytes([this.line[i]]) + b' '
+                i += 1
         return output[0:len(output)-1].split()
                 
     def accessdict(this,d,pline,punc):
@@ -348,8 +361,8 @@ class Segmentation:
                 while j < len(alist):
                     activepair = alist[j]
 
-                    if punc != '':
-                        temp = activepair[0].replace(punc,'') + pline[i]
+                    if punc != b'':
+                        temp = activepair[0].replace(punc,b'') + pline[i]
                     else:
                         temp = activepair[0] + pline[i]
                         
@@ -398,7 +411,7 @@ class Segmentation:
                     temp3 = temp1[0]
 
                     if end == temp2[0]:
-                        result[len(result):len(result)+1] = [[word+' '+temp3,[position[0],temp2[1]]]]
+                        result[len(result):len(result)+1] = [[word+b' '+temp3,[position[0],temp2[1]]]]
                         if start == 0:
                             del result[j]
                             j-=1
@@ -584,10 +597,10 @@ class Segmentation:
             return (result+' '+tmp).strip().split()
     
     def mergeSyllableByDictionary(self,split_line,my_dict,bypass=0,filter=True):
-        self.setLine(split_line.replace(' ',''))
+        self.setLine(split_line.replace(b' ',b''))
         tokens = split_line.split()
 
-        completeList = self.accessdict(my_dict,tokens,'')
+        completeList = self.accessdict(my_dict,tokens,b'')
 
         if not bypass and len(completeList) > 40:
             result = self.divideAllCompleteList(completeList)
@@ -639,8 +652,7 @@ class Segmentation:
 
         s = len(self.line)
         t = 0
-        X = tmp.keys()
-        X.sort()
+        X = sorted(tmp.keys())
         fill = []
         for x in tmp:
             if x < s:
@@ -672,9 +684,9 @@ class Segmentation:
         for s,t in fill:
             clist.append([self.line[s:t],[s,t]])
 
-        ctmp = map(lambda x:(x[1],x[0]),clist)
+        ctmp = list(map(lambda x:(x[1],x[0]),clist))
         ctmp.sort()
-        ctmp = map(lambda x:(x[1],x[0]),ctmp)
+        ctmp = list(map(lambda x:(x[1],x[0]),ctmp))
 
         return ctmp
 
@@ -684,7 +696,7 @@ class Segmentation:
         
         pline = this.presegment()
 
-        this.completeList = this.accessdict(this.dict,pline,'')
+        this.completeList = this.accessdict(this.dict,pline,b'')
         this.completeList = this.complete(this.completeList)
 
         #print 'line',this.line.decode('cp874')
@@ -773,15 +785,15 @@ class Segmentation:
 
             return al,this.hasunknown
         
-    def filterResult(this,result,punc=''):
+    def filterResult(this,result,punc=b''):
         max = 0
         maxlist = []
         for r in result:
             tokens = r.split()
-            cost = len(r.replace(' ',''))  + 10000  - (len(tokens)*3)
+            cost = len(r.replace(b' ',b''))  + 10000  - (len(tokens)*3)
             for token in tokens:
-                if punc != '':
-                    token = token.replace(punc,'')
+                if punc != b'':
+                    token = token.replace(punc,b'')
                 if not this.lexiconDict.contains(token):
                     if this.gensyl.contains(token):
                         cost -= 0.5
@@ -810,9 +822,9 @@ class Segmentation:
        ((not Segmentation.IsThaiWord(token[i-1]) and not Segmentation.IsThaiWord(token[i])))):
                     result += token[i]
                 else:
-                    result += ' ' + token[i]
+                    result += b' ' + token[i]
                 i+=1
-            if result[0] is ' ':
+            if result[0:1] == b' ':
                 result = result[1:len(result)]
             al.append(result)
 
@@ -822,34 +834,34 @@ class Segmentation:
         al = []
         for unknown in unknownlist:
             token = unknown.split()
-            result = ''
+            result = b''
             j = 0
             while j < len(token):
-                if len(token[j]) == 1 and token[j] != '_' and Segmentation.IsThaiChar(token[j]):
-                    if j > 0 and token[j-1] != '_' and j < len(token)-1 and token[j+1] != '_':
+                if len(token[j]) == 1 and token[j] != b'_' and Segmentation.IsThaiChar(token[j] if isinstance(token[j], int) else token[j][0]):
+                    if j > 0 and token[j-1] != b'_' and j < len(token)-1 and token[j+1] != b'_':
                         if this.gensyl.contains(token[j-1]+token[j]) and this.gensyl.contains(token[j]+token[j+1]):
                             result += token[j]
                         elif this.gensyl.contains(token[j-1]+token[j]):
                             result += token[j]
                         elif this.gensyl.contains(token[j]+token[j-1]):
-                            result += ' ' + token[j] + '+'
-                        elif token[j] == 'Í' or token[j] == 'Ê':
-                            result += ' ' + token[j] + '+'
+                            result += b' ' + token[j] + b'+'
+                        elif token[j] == b'\xcd' or token[j] == b'\xca':  # 'Í' or 'Ê' in iso-8859-11
+                            result += b' ' + token[j] + b'+'
                         elif this.lexiconDict.contains(token[j-1]):
-                            result += ' ' + token[j] + '+'
+                            result += b' ' + token[j] + b'+'
                         else:
                             result += token[j]
 
-                    elif j>0 and token[j-1] != '_':
+                    elif j>0 and token[j-1] != b'_':
                         result += token[j]
-                    elif j<len(token)-1 and token[j+1] != '_':
-                        result += ' ' + token[j] + '+'
+                    elif j<len(token)-1 and token[j+1] != b'_':
+                        result += b' ' + token[j] + b'+'
                     elif j == 0:
-                        result += ' ' + token[j] + '+'
+                        result += b' ' + token[j] + b'+'
                     else:
                         result += token[j]
                         
-                elif len(token[j]) < 4 and j > 0 and not this.lexiconDict.contains(token[j]) and token[j].find('ì') > -1:
+                elif len(token[j]) < 4 and j > 0 and not this.lexiconDict.contains(token[j]) and token[j].find(b'\xec') > -1:  # 'ì' in iso-8859-11
                     result += token[j]
                 elif j > 0 and this.gensyl.contains(token[j-1]+token[j]):
                     result += token[j]
@@ -857,14 +869,14 @@ class Segmentation:
                     result += token[j] + token[j+1]
                     j += 1
                 else:
-                    result += ' '+token[j]
+                    result += b' '+token[j]
                 j+=1
 
-            result = result.replace('+ ','')
-            result = result.replace('+','')
+            result = result.replace(b'+ ',b'')
+            result = result.replace(b'+',b'')
             
             # check len before (workaround)
-            if len(result) > 0 and result[0] is ' ':
+            if len(result) > 0 and result[0:1] == b' ':
                 result = result[1:len(result)]
 
             if al.count(result) == 0:
