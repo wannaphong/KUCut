@@ -565,36 +565,36 @@ class Segmentation:
             return results, result1[1] and result2[1]
     
     def mergeUnknownByHeuristic(self,tokens):
-        result,tmp = '',''
+        result,tmp = b'',b''
         start = 0
         count = 0
         for token in tokens:
             if not start and (self.lexiconDict.contains(token) or Segmentation.IsSymbol(token)):
-                result += ' '+token
+                result += b' '+token
             elif not start and (not self.lexiconDict.contains(token) or not Segmentation.IsSymbol(token) or not Segmentation.IsNumber(token)):
                 start = 1
-                result += ' '+token
+                result += b' '+token
             elif start and not count and self.suspectDict.contains(token):
                 tmp = token
                 count = 1
             elif start and not count and (Segmentation.IsSymbol(token) or not self.suspectDict.contains(token)):
                 start = 0
-                result += ' '+token
+                result += b' '+token
             elif start and not count and not self.lexiconDict.contains(token):
                 result += token
             elif start and count and not self.lexiconDict.contains(token) and not Segmentation.IsSymbol(token):
                 result += tmp+token
-                tmp = ''
+                tmp = b''
                 count = 0
             elif start and count and (self.lexiconDict.contains(token) or Segmentation.IsSymbol(token)):
-                result += ' '+tmp+' '+token
+                result += b' '+tmp+b' '+token
                 count = start = 0
-                tmp = ''
+                tmp = b''
 
         if len(tokens) == 2:
             return (result+tmp).strip().split()
         else:
-            return (result+' '+tmp).strip().split()
+            return (result+b' '+tmp).strip().split()
     
     def mergeSyllableByDictionary(self,split_line,my_dict,bypass=0,filter=True):
         self.setLine(split_line.replace(b' ',b''))
@@ -955,7 +955,9 @@ class Segmentation:
         cat = lambda x,y:x+y
         pattern = r'.*(¹ÒÂ|¹Ò§|¹Ò§ÊÒÇ _) ([^_]+)'
         reg = re.compile(pattern)
-        m = reg.match(line)
+        # Convert bytes to string for regex matching
+        line_str = line.decode('iso-8859-11') if isinstance(line, bytes) else line
+        m = reg.match(line_str)
         if m is not None:
             name = m.group(2)
             if len(name.strip().split()) > 1:
@@ -1083,7 +1085,7 @@ class Segmentation:
                     tokens,modify = content
                     if len(tokens) > 1:
                         if not no_stat:
-                            tokens = self.statWordDisambiguousLine(reduce(lambda x,y:x+' '+y,tokens)).split()
+                            tokens = self.statWordDisambiguousLine(reduce(lambda x,y:x+b' '+y,tokens)).split()
                         tokens = self.mergeUnknownByHeuristic(tokens)
                     tmp_contents.append((tokens,modify))
                 tmp_results.append((number,tmp_contents))
@@ -1196,7 +1198,7 @@ class Segmentation:
             if result.count(i-1):
                 output += words[i]
             else:
-                output += ' '+words[i]
+                output += b' '+words[i]
                 
         return output
     
