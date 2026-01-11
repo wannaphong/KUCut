@@ -179,9 +179,9 @@ class Test:
         s = str(s)
         if self.html:
             s = s.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
-            print '%s%s%s' % (before, s, after)
+            print('%s%s%s') % (before, s, after)
         else:
-            print s
+            print(s)
 
     def seen(self, object):
         """Return true if this object has been seen before.
@@ -203,7 +203,7 @@ def main(args):
         for file in glob.glob(arg):
             if file.endswith('.py'):
                 modules.append(__import__(file[:-3]))
-    print Test(modules, html=html, out=out)
+    print(Test(modules, html=html, out=out))
 
 if __name__ == '__main__':
     main(sys.argv[1:])

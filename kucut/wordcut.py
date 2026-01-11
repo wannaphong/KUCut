@@ -11,12 +11,11 @@ except ImportError:
     except ImportError:
         import dbm as gdbm
 
-from . import AIMA.text
-    
-class NthGram(AIMA.text.NgramTextModel):
+from .AIMA import text as AIMA_text
+class NthGram(AIMA_text.NgramTextModel):
     def __init__(self,n,default):
         self._n = n
-        AIMA.text.NgramTextModel.__init__(self,n=n,default=default)
+        AIMA_text.NgramTextModel.__init__(self,n=n,default=default)
         
     def train(self, token_lines, quiet=False):
         count = 0
@@ -204,7 +203,7 @@ class Segmentation:
     def IsSymbol(c):
         if len(c) > 1:
             return 0
-        if 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\'.find(:?.*&^%$#@!+_-><{}[]()/\\\"æ|Ï',c) > -1:
+        if string.find('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\',:?.*&^%$#@!+_-><{}[]()/\\\"æ|Ï',c) > -1:
             return 1
         return 0
     IsSymbol = staticmethod(IsSymbol)
@@ -212,10 +211,10 @@ class Segmentation:
     def IsNumber(number):
         if len(number) > 1:
             for d in number:
-                if '0123456789.find(.๑๒๓๔๕๖๗๘๙๐'.decode('uft8').encode('cp874'),d)==-1:
+                if '0123456789,.๑๒๓๔๕๖๗๘๙๐'.find(d)==-1:
                     return 0
             return 1
-        if '0123456789๑๒๓๔๕๖๗๘๙๐'.decode('utf8').encode('cp874').find(number) > -1:
+        if '0123456789๑๒๓๔๕๖๗๘๙๐'.find(number) > -1:
             return 1
         return 0
     IsNumber = staticmethod(IsNumber)
@@ -269,6 +268,7 @@ class Segmentation:
                     print(f"Warning: Could not load database {database}: {e}")
                     self.trigram = {}
                     self.corpus_size = 0
+            
 
         this.gw = float(gw)
         this.lw = float(lw)
@@ -347,7 +347,7 @@ class Segmentation:
                     activepair = alist[j]
 
                     if punc != '':
-                        temp = activepair[0].replace(punc, '') + pline[i]
+                        temp = activepair[0].replace(punc,'') + pline[i]
                     else:
                         temp = activepair[0] + pline[i]
                         
@@ -776,7 +776,7 @@ class Segmentation:
         maxlist = []
         for r in result:
             tokens = r.split()
-            cost = len(r.replace(' ', ''))  + 10000  - (len(tokens)*3)
+            cost = len(r.replace(' ',''))  + 10000  - (len(tokens)*3)
             for token in tokens:
                 if punc != '':
                     token = token.replace(punc,'')
@@ -858,8 +858,8 @@ class Segmentation:
                     result += ' '+token[j]
                 j+=1
 
-            result = result.replace('+ ', '')
-            result = result.replace('+', '')
+            result = result.replace('+ ','')
+            result = result.replace('+','')
             
             # check len before (workaround)
             if len(result) > 0 and result[0] is ' ':
@@ -977,8 +977,8 @@ class Segmentation:
         for line in lines:
             try:
                 if isinstance(line, str):
-                    # In Python 3, str is unicode, encode to bytes then decode as iso8859_11
-                    line = line.strip().encode('utf-8').decode('utf-8').encode('iso8859_11')
+                    # In Python 3, str is unicode
+                    line = line.strip().encode('iso8859_11')
                 elif isinstance(line, bytes):
                     line = line.strip().decode('utf8').encode('iso8859_11')
                 else:
@@ -987,7 +987,7 @@ class Segmentation:
                 print('encoding error:', line)
 
             if not self.quiet: print(line_count)
-            tokens = line.replace('+','<-plus->'.split().strip())
+            tokens = line.replace('+','<-plus->').strip().split()
             tmp = []
             line_count += 1
 
@@ -1084,16 +1084,16 @@ class Segmentation:
         if x != None and y != None and z != None:
             try:
                 return float(self.trigram['%s %s %s'%(x,y,z)])/float(self.trigram['trigrams'])
-            except KeyError,e:
+            except KeyError as e:
                 return 1.0/float(self.trigram['trigrams'])
         if x != None and y != None:
             try:
                 return float(self.trigram['%s %s'%(x,y)])/float(self.trigram['bigrams'])
-            except KeyError,e:
+            except KeyError as e:
                 return 1.0/float(self.trigram['bigrams'])
         try:
             return float(self.trigram['%s'%(x)])/float(self.trigram['unigrams'])
-        except KeyError,e:
+        except KeyError as e:
             return 1.0/float(self.trigram['unigrams'])
                 
     def _mi(self,x,y):  
@@ -1140,18 +1140,18 @@ class Segmentation:
                 for w_l,w_r in [(l_w_l,l_w_r),(r_w_l,r_w_r)]:
                     try:
                         l_s = self._stat_global(words[i-3]+' '+words[i-2]+' '+w_l,'left')
-                    except IndexError,e:
+                    except IndexError as e:
                         try:
                             l_s = self._stat_global(words[i-2]+' '+w_l,'left')
-                        except IndexError,e:
+                        except IndexError as e:
                             l_s = self._stat_global(w_l,'left')
                                 
                     try:
                         r_s = self._stat_global(w_r+' '+words[i+2]+' '+words[i+3],'right')
-                    except IndexError,e:
+                    except IndexError as e:
                         try:
                             r_s = self._stat_global(w_r+' '+words[i+2],'right')
-                        except IndexError,e:
+                        except IndexError as e:
                             r_s = self._stat_global(w_r,'right')
 
                     prob = (0.5*l_s)+(0.5*r_s)
@@ -1195,9 +1195,9 @@ class Segmentation:
 
         for line in lines:
             count += 1
-            per = (count*100)/total
+            per = (count*100)//total
             if per != pre:
-                if not self.quiet: print '.',
+                if not self.quiet: print('.', end='')
                 pre = per
             tmp = []
             for t in line[1]:
@@ -1220,10 +1220,10 @@ class Segmentation:
                                 x,y = 0,0
                                 x_p,y_p = 0.0,0.0
                                                             
-                                if self.L[i-2]+' '+prev in trigram:
+                                if (L[i-2]+' '+prev):
                                     x = float(self.trigram[L[i-2]+' '+prev])
                                     x_p = self._getTrigram(L[i-2],prev)
-                                if self.prev+' '+token in trigram:
+                                if (prev+' '+token):
                                     y = float(self.trigram[prev+' '+token])
                                     y_p = self._getTrigram(prev,token)
                                 ### first case ###
@@ -1242,10 +1242,10 @@ class Segmentation:
                             else:
                                 x,y = 0,0
                                 x_p,y_p = 0.0,0.0
-                                if self.next+' '+L[i+2] in trigram:
+                                if (next+' '+L[i+2]):
                                     x = float(self.trigram[next+' '+L[i+2]])
                                     x_p = self._getTrigram(next,L[i+2])
-                                if self.token+' '+next in trigram:
+                                if (token+' '+next):
                                     y = float(self.trigram[token+' '+next])
                                     y_p = self._getTrigram(token,next)
                                 if (x == 0 and y == 0) or (x < y or x_p < y_p) or (x > y and (x < Threshold1 or x_p < Threshold2)):
@@ -1347,19 +1347,19 @@ class Segmentation:
                 for j in range(len(lines[1][0][0])):
                     try:
                         n1 = lines[1][i][0][j+1]
-                    except IndexError,e:
+                    except IndexError as e:
                         n1 = ''
                     try:
                         n2 = lines[1][i][0][j+2]
-                    except IndexError,e:
+                    except IndexError as e:
                         n2 = ''
                     try:
                         p1 = lines[1][i][0][j-1]
-                    except IndexError,e:
+                    except IndexError as e:
                         p1 = ''
                     try:
                         p2 = lines[1][i][0][j-2]
-                    except IndexError,e:
+                    except IndexError as e:
                         p2 = ''
                         
                     w = lines[1][i][0][j]
@@ -1431,7 +1431,7 @@ class Segmentation:
         tokens = line.strip().split()
         for i in range(len(tokens))[1:]:
             code = tokens[i-1]+' '+tokens[i]
-            if self.code in prohibitPattern:
+            if code in self.prohibitPattern:
                 return 1
         return 0
     

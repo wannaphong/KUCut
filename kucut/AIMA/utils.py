@@ -1,12 +1,8 @@
 """Provide some widely useful utilities. Safe for "from utils import *"."""
 
-from __future__ import generators
 import operator, math, random, copy, sys, os.path, bisect
 
-if sys.version_info >= (2, 3):
-    from sets import *
-else:
-    from python23 import *
+# In Python 3, set is a built-in type, no need to import from sets module
 
 #______________________________________________________________________________
 # Simple Data Structures: infinity, Dict, Struct
@@ -68,7 +64,7 @@ def update(x, **entries):
 # NOTE: Sequence functions (count_if, find_if, every, some) take function
 # argument first (like reduce, filter, and map).
 
-def sort(seq, compare=cmp):
+def sort(seq, compare=None):
     """Sort seq (mutating it) and return it.  compare is the 2nd arg to .sort.
     >>> sort([3, 1, 2])
     [1, 2, 3]
@@ -84,9 +80,12 @@ def sort(seq, compare=cmp):
     return seq
 
 
-def comparer(key=None, cmp=cmp):
+def comparer(key=None, cmp=None):
     """Build a compare function suitable for sort. The most common use is
     to specify key, meaning compare the values of key(x), key(y)."""
+    if cmp is None:
+        # In Python 3, use a default comparison
+        cmp = lambda x, y: (x > y) - (x < y)
     if key == None:
         return cmp
     else:
@@ -359,12 +358,16 @@ def turn_right(orientation):
 def turn_left(orientation):
     return orientations[(orientations.index(orientation)+1) % len(orientations)]
 
-def distance((ax, ay), (bx, by)):
+def distance(a, b):
     "The distance between two (x, y) points."
+    ax, ay = a
+    bx, by = b
     return math.hypot((ax - bx), (ay - by))
 
-def distance2((ax, ay), (bx, by)):
+def distance2(a, b):
     "The square of the distance between two (x, y) points."
+    ax, ay = a
+    bx, by = b
     return (ax - bx)**2 + (ay - by)**2
 
 def clip(vector, lowest, highest):
@@ -460,7 +463,7 @@ def print_table(table, header=None, sep=' ', numfmt='%g'):
     sizes = map(maxlen, zip(*[map(str, row) for row in table]))
     for row in table:
         for (j, size, x) in zip(justs, sizes, row):
-            print getattr(str(x), j)(size), sep,
+            print(getattr(str(x), j)(size), sep,)
         print
 
 def AIMAFile(components, mode='r'):

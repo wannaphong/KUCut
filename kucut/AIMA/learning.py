@@ -1,6 +1,6 @@
 """Learn to estimate functions  from examples. (Chapters 18-20)"""
 
-from utils import *
+from .utils import *
 import agents, random, os.path, operator
 
 #______________________________________________________________________________
@@ -284,13 +284,13 @@ class DecisionTree:
 
     def display(self, indent=0):
         name = self.attrname
-        print 'Test', name
+        print('Test'), name
         for (val, subtree) in self.branches.items():
-            print ' '*4*indent, name, '=', val, '==>',
+            print(' ')*4*indent, name, '=', val, '==>',
             if isinstance(subtree, DecisionTree):
                 subtree.display(indent+1)
             else:
-                print 'RESULT = ', subtree
+                print('RESULT = '), subtree
 
     def __repr__(self):
         return 'DecisionTree(%r, %r, %r)' % (
@@ -434,9 +434,9 @@ def test(learner, dataset, examples=None, verbose=0):
         if output == desired:
             right += 1
             if verbose >= 2:
-               print '   OK: got %s for %s' % (desired, example)
+               print('   OK: got %s for %s') % (desired, example)
         elif verbose:
-            print 'WRONG: got %s, expected %s for %s' % (
+            print('WRONG: got %s, expected %s for %s') % (
                output, desired, example)
     return right / len(examples)
 

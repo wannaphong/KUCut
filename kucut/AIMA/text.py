@@ -4,9 +4,10 @@ and show the Viterbi algorithm for segmentatioon of letters into words.
 Then we show a very simple Information Retrieval system, and an example
 working on a tiny sample of Unix manual pages."""
 
-from utils import *
+from .utils import *
 from math import log, exp
-import re, probability, string, search
+import re, string
+from . import probability, search
 
 class CountingProbDist(probability.ProbDist):
     """A probability distribution formed by observing and counting examples. 
@@ -204,7 +205,7 @@ class IRSystem:
         "Present the results as a list."
         for (score, d) in results:
             doc = self.documents[d]
-            print "%5.2f|%25s | %s" % (100 * score, doc.url, doc.title[:45])
+            print("%5.2f|%25s | %s") % (100 * score, doc.url, doc.title[:45])
 
     def present_results(self, query_text, n=10):
         "Get results for the query and present them."

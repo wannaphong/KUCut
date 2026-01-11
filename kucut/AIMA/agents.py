@@ -21,7 +21,7 @@ EnvFrame ## A graphical representation of the Environment
 
 """
 
-from utils import *
+from .utils import *
 import random, copy
 
 #______________________________________________________________________________
@@ -66,7 +66,7 @@ def TraceAgent(agent):
     old_program = agent.program
     def new_program(percept):
         action = old_program(percept)
-        print '%s perceives %s and does %s' % (agent, percept, action)
+        print('%s perceives %s and does %s') % (agent, percept, action)
         return action
     agent.program = new_program
     return agent
@@ -107,7 +107,8 @@ class ReflexVacuumAgent(Agent):
 
     def __init__(self):
         Agent.__init__(self)
-        def program((location, status)):
+        def program(percept):
+            location, status = percept
             if status == 'Dirty': return 'Suck'
             elif location == loc_A: return 'Right'
             elif location == loc_B: return 'Left'
@@ -140,8 +141,9 @@ class ModelBasedVacuumAgent(Agent):
     def __init__(self):
         Agent.__init__(self)
         model = {loc_A: None, loc_B: None}
-        def program((location, status)):
+        def program(percept):
             "Same as ReflexVacuumAgent, except if everything is clean, do NoOp"
+            location, status = percept
             model[location] = status ## Update the model here
             if model[loc_A] == model[loc_B] == 'Clean': return 'NoOp'
             elif status == 'Dirty': return 'Suck'
@@ -500,16 +502,16 @@ class EnvFrame(tk.Frame):
             self.after(ms, self.background_run)
 
     def run(self):
-        print 'run'
+        print('run')
         self.running = 1
         self.background_run()
 
     def stop(self):
-        print 'stop'
+        print('stop')
         self.running = 0
         
     def left(self, event):
-        print 'left at ', event.x/50, event.y/50
+        print('left at '), event.x/50, event.y/50
 
     def edit_objects(self, event):
         """Choose an object within radius and edit its fields."""
