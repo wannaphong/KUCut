@@ -19,13 +19,26 @@ Documentation
 
 Requirement
 ~~~~~~~~~~~~~
-	python 2.5 or above
+	Python 3.9 or above
+
+Optional Dependencies
+~~~~~~~~~~~~~~~~~~~~~
+	For improved accuracy using the trigram statistical model (corpus.db):
+	
+	pip install berkeleydb
+	
+	Note: The berkeleydb package requires Berkeley DB C libraries to be installed on your system.
+	Without this package, KUCut will still work but without the trigram statistical model.
 
 Installation
 ~~~~~~~~~~~~~
 	using the followed command on command line 
 
-	python setup.py install
+	pip install .
+	
+	Or for development:
+	
+	pip install -e .
 
 How to use
 ~~~~~~~~~~~~~

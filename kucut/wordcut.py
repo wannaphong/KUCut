@@ -4,6 +4,8 @@
 import math,sys,string,re,time,os.path,random,pickle
 from functools import reduce
 import optparse
+
+# Try to import database modules with fallbacks
 try:
     import dbm.gnu as gdbm
 except ImportError:
@@ -11,6 +13,58 @@ except ImportError:
         import dbm.ndbm as gdbm
     except ImportError:
         import dbm as gdbm
+
+# Try to import berkeleydb for reading old Berkeley DB files
+try:
+    import berkeleydb as bdb
+    HAS_BERKELEYDB = True
+except ImportError:
+    HAS_BERKELEYDB = False
+
+# Wrapper class for Berkeley DB to make it act like a dict
+class BerkeleyDBWrapper:
+    """Wrapper to make Berkeley DB behave like a dict for backward compatibility"""
+    def __init__(self, db):
+        self.db = db
+    
+    def __getitem__(self, key):
+        # Convert string key to bytes if needed
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        value = self.db.get(key)
+        if value is None:
+            raise KeyError(key)
+        # Return as string (decode bytes)
+        return value.decode('utf-8') if isinstance(value, bytes) else value
+    
+    def __contains__(self, key):
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        return self.db.get(key) is not None
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+    
+    def keys(self):
+        cursor = self.db.cursor()
+        keys = []
+        rec = cursor.first()
+        while rec:
+            key, _ = rec
+            keys.append(key.decode('utf-8') if isinstance(key, bytes) else key)
+            rec = cursor.next()
+        cursor.close()
+        return keys
+    
+    def __del__(self):
+        if hasattr(self, 'db') and self.db:
+            try:
+                self.db.close()
+            except:
+                pass
 
 from .AIMA import text as AIMA_text
 class NthGram(AIMA_text.NgramTextModel):
@@ -269,18 +323,39 @@ class Segmentation:
 
         if database != None:
             try:
+                # Try gdbm first
                 this.trigram = gdbm.open(database,'r')
                 this.corpus_size = int(this.trigram[b'unigrams' if isinstance(list(this.trigram.keys())[0], bytes) else 'unigrams'])
             except Exception as e:
-                # If gdbm doesn't work, try to open as a pickle file or skip
-                try:
-                    with open(database, 'rb') as f:
-                        this.trigram = pickle.load(f)
-                    this.corpus_size = int(this.trigram['unigrams'])
-                except:
-                    print(f"Warning: Could not load database {database}: {e}")
-                    this.trigram = {}
-                    this.corpus_size = 0
+                # If gdbm doesn't work, try berkeleydb for old Berkeley DB files
+                if HAS_BERKELEYDB:
+                    try:
+                        db = bdb.db.DB()
+                        db.open(database, None, bdb.db.DB_HASH, bdb.db.DB_RDONLY)
+                        this.trigram = BerkeleyDBWrapper(db)
+                        # Get corpus_size from unigrams key
+                        unigrams_val = this.trigram.get('unigrams', '0')
+                        this.corpus_size = int(unigrams_val)
+                    except Exception as bdb_error:
+                        # If berkeleydb also fails, try pickle
+                        try:
+                            with open(database, 'rb') as f:
+                                this.trigram = pickle.load(f)
+                            this.corpus_size = int(this.trigram['unigrams'])
+                        except Exception as pickle_error:
+                            print(f"Warning: Could not load database {database}. Tried gdbm ({e}), berkeleydb ({bdb_error}), and pickle ({pickle_error}). Using empty trigram model.")
+                            this.trigram = {}
+                            this.corpus_size = 0
+                else:
+                    # No berkeleydb available, try pickle
+                    try:
+                        with open(database, 'rb') as f:
+                            this.trigram = pickle.load(f)
+                        this.corpus_size = int(this.trigram['unigrams'])
+                    except Exception as pickle_error:
+                        print(f"Warning: Could not load database {database}. Database appears to be in Berkeley DB format. Install 'berkeleydb' package for Python 3 support: pip install berkeleydb")
+                        this.trigram = {}
+                        this.corpus_size = 0
             
 
         this.gw = float(gw)

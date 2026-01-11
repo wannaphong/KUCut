@@ -10,4 +10,7 @@ setup(name='kucut',
       package_data={'kucut': ['corpus.db', 'dict/*.txt']},
       python_requires='>=3.9',
       install_requires=[],
+      extras_require={
+          'berkeleydb': ['berkeleydb>=18.1.0'],  # Optional: for reading corpus.db trigram database
+      },
 )
