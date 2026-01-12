@@ -99,7 +99,8 @@ class Dictionary:
         this.extend(filename)
         
     def extend(this, filename):
-        lines = open(filename,'r', encoding='iso-8859-11').readlines()      
+        with open(filename,'r', encoding='iso-8859-11') as f:
+            lines = f.readlines()      
         for line in lines:
             if line[0] != '#' or len(line.strip()) == 1:
                 token = line.split()
@@ -223,7 +224,8 @@ class GenSyllable:
         self.loadRules(rules_file)
     
     def loadRules(self, rules_file):
-        lines = open(rules_file, encoding='iso-8859-11').readlines()
+        with open(rules_file, encoding='iso-8859-11') as f:
+            lines = f.readlines()
         stat = ''
 
         def mapVar(x):
@@ -1514,7 +1516,8 @@ class Segmentation:
 
 
     def loadProhibitPattern(self,prohibit_file):
-        lines = open(prohibit_file,'r', encoding='iso-8859-11').readlines()
+        with open(prohibit_file,'r', encoding='iso-8859-11') as f:
+            lines = f.readlines()
         for line in lines:
             self.prohibitPattern[line.strip()] = 1
 

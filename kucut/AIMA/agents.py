@@ -523,7 +523,7 @@ class EnvFrame(tk.Frame):
         menu.tk_popup(event.x + self.winfo_rootx(),
                       event.y + self.winfo_rooty())
 
-        #image=PhotoImage(file=r"C:\Documents and Settings\pnorvig\Desktop\wumpus.gif")
+        #image=PhotoImage(file=r"C:\\Documents and Settings\\pnorvig\\Desktop\\wumpus.gif")
         #self.images = []
         #self.images.append(image)
         #c.create_image(200,200,anchor=NW,image=image)
