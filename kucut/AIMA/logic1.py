@@ -18,8 +18,8 @@ Then we implement various functions for doing logical inference:
 
 from __future__ import generators
 import re
-import agents
-from utils import *
+from . import agents
+from .utils import *
 
 #______________________________________________________________________________
 
@@ -319,7 +319,7 @@ def pl_true(exp, model={}):
     elif op == '^':
         return pt != qt
     else:
-        raise ValueError, "illegal operator in logic expression" + str(exp)
+        raise ValueError("illegal operator in logic expression" + str(exp))
 
 
 #______________________________________________________________________________

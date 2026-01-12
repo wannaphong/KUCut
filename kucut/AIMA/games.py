@@ -2,7 +2,7 @@
 
 """
 
-from utils import *
+from .utils import *
 import random 
 
 #______________________________________________________________________________
@@ -167,7 +167,7 @@ class Game:
 
     def display(self, state):
         "Print or otherwise display the state."
-        print state
+        print(state)
 
     def successors(self, state):
         "Return a list of legal (move, state) pairs."
@@ -245,7 +245,7 @@ class TicTacToe(Game):
         board = state.board
         for x in range(1, self.h+1):
             for y in range(1, self.v+1):
-                print board.get((x, y), '.'),
+                print(board.get((x, y), '.'),)
             print
 
     def compute_utility(self, board, move, player):

@@ -1,32 +1,93 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
 
-import math,sys,string,re,bsddb,time,os.path,random,cPickle
+import math,sys,string,re,time,os.path,random,pickle
+from functools import reduce
 import optparse
 
-import AIMA.text
+# Try to import database modules with fallbacks
+try:
+    import dbm.gnu as gdbm
+except ImportError:
+    try:
+        import dbm.ndbm as gdbm
+    except ImportError:
+        import dbm as gdbm
+
+# Try to import berkeleydb for reading old Berkeley DB files
+try:
+    import berkeleydb as bdb
+    HAS_BERKELEYDB = True
+except ImportError:
+    HAS_BERKELEYDB = False
+
+# Wrapper class for Berkeley DB to make it act like a dict
+class BerkeleyDBWrapper:
+    """Wrapper to make Berkeley DB behave like a dict for backward compatibility"""
+    def __init__(self, db):
+        self.db = db
     
-class NthGram(AIMA.text.NgramTextModel):
+    def __getitem__(self, key):
+        # Convert string key to bytes if needed
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        value = self.db.get(key)
+        if value is None:
+            raise KeyError(key)
+        # Return as string (decode bytes)
+        return value.decode('utf-8') if isinstance(value, bytes) else value
+    
+    def __contains__(self, key):
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        return self.db.get(key) is not None
+    
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+    
+    def keys(self):
+        cursor = self.db.cursor()
+        keys = []
+        rec = cursor.first()
+        while rec:
+            key, _ = rec
+            keys.append(key.decode('utf-8') if isinstance(key, bytes) else key)
+            rec = cursor.next()
+        cursor.close()
+        return keys
+    
+    def __del__(self):
+        if hasattr(self, 'db') and self.db:
+            try:
+                self.db.close()
+            except:
+                pass
+
+from .AIMA import text as AIMA_text
+class NthGram(AIMA_text.NgramTextModel):
     def __init__(self,n,default):
         self._n = n
-        AIMA.text.NgramTextModel.__init__(self,n=n,default=default)
+        AIMA_text.NgramTextModel.__init__(self,n=n,default=default)
         
     def train(self, token_lines, quiet=False):
         count = 0
         prev = 0
         total = len(token_lines)
-        if not quiet: print '\nStart loading %d-gram' % (self._n)
+        if not quiet: print('\nStart loading %d-gram' % (self._n))
         for token_line in token_lines:
             count += 1
             prev_word = []
             for t in token_line[1]:
                 self.add_sequence(t[0])
-                per = (count*100)/total
+                per = (count*100)//total
                 if per != prev:
-                    if not quiet: print '.',
+                    if not quiet: print('.', end='')
                     prev = per
 
-        if not quiet: print '\nComplete...'
+        if not quiet: print('\nComplete...')
         
 
 class Dictionary:
@@ -38,10 +99,11 @@ class Dictionary:
         this.extend(filename)
         
     def extend(this, filename):
-        lines = open(filename,'r').readlines()      
+        with open(filename,'r', encoding='iso-8859-11') as f:
+            lines = f.readlines()      
         for line in lines:
             if line[0] != '#' or len(line.strip()) == 1:
-                token = string.split(line)
+                token = line.split()
                 word = token[0]
                 tag = []
                 
@@ -61,10 +123,10 @@ class Dictionary:
         if len(word) > 2:
             key3 = word[2]
 
-        if this.dict.has_key(key1):
-            if this.dict[key1].has_key(key2):
-                if this.dict[key1][key2].has_key(key3):
-                    if not this.dict[key1][key2][key3].has_key(word):
+        if key1 in this.dict:
+            if key2 in this.dict[key1]:
+                if key3 in this.dict[key1][key2]:
+                    if word not in this.dict[key1][key2][key3]:
                         this.dict[key1][key2][key3][word] = tag
                 else:
                     this.dict[key1][key2][key3] = {word:tag}
@@ -74,24 +136,27 @@ class Dictionary:
             this.dict[key1] = {key2:{key3:{word:tag}}}
         
     def contains(this,word):
-        key1 = word[0]
-        key2,key3 = '',''
+        # Convert bytes to string if needed
+        if isinstance(word, bytes):
+            try:
+                word = word.decode('iso-8859-11')
+            except:
+                return 0
         
-        if len(word) > 1:
-            key2 = word[1]
-        if len(word) > 2:
-            key3 = word[2]
+        key1 = word[0] if len(word) > 0 else ''
+        key2 = word[1] if len(word) > 1 else ''
+        key3 = word[2] if len(word) > 2 else ''
         
-        if not this.dict.has_key(key1):
+        if key1 not in this.dict:
             return 0
         
-        if not this.dict[key1].has_key(key2):
+        if key2 not in this.dict[key1]:
             return 0
 
-        if not this.dict[key1][key2].has_key(key3):
+        if key3 not in this.dict[key1][key2]:
             return 0
     
-        return this.dict[key1][key2][key3].has_key(word)
+        return word in this.dict[key1][key2][key3]
 
     def gettag(this,word):
         key1 = word[0]
@@ -109,7 +174,7 @@ class Dictionary:
 
     def count(this):
         i = 0
-        for key1 in this.dict.keys():
+        for key1 in list(this.dict.keys()):
             for key2 in this.dict[key1]:
                 for key3 in this.dict[key1][key2]:
                     for word in this.dict[key1][key2][key3]:
@@ -117,34 +182,37 @@ class Dictionary:
         return i
     
     def isprefix(this,word):
-        key1 = word[0]
-        key2,key3 = '',''
+        # Convert bytes to string if needed
+        if isinstance(word, bytes):
+            try:
+                word = word.decode('iso-8859-11')
+            except:
+                return 0
+        
+        key1 = word[0] if len(word) > 0 else ''
+        key2 = word[1] if len(word) > 1 else ''
+        key3 = word[2] if len(word) > 2 else ''
 
-        if len(word) > 1:
-            key2 = word[1]
-        if len(word) > 2:
-            key3 = word[2]
-
-        if not this.dict.has_key(key1):
+        if key1 not in this.dict:
             return 0
     
         if key2 == '':
             return 1
         
-        if not this.dict[key1].has_key(key2):
+        if key2 not in this.dict[key1]:
             return 0
 
         if key3 == '':
             return 1
         
-        if not this.dict[key1][key2].has_key(key3):
+        if key3 not in this.dict[key1][key2]:
             return 0
 
         if len(word) == 3:
             return 1
 
         for s in this.dict[key1][key2][key3]:
-            if s != word and string.find(s,word) == 0:
+            if s != word and s.find(word) == 0:
                 return 1
         return 0
 
@@ -156,11 +224,12 @@ class GenSyllable:
         self.loadRules(rules_file)
     
     def loadRules(self, rules_file):
-        lines = open(rules_file).readlines()
+        with open(rules_file, encoding='iso-8859-11') as f:
+            lines = f.readlines()
         stat = ''
 
         def mapVar(x):
-            if self.variable.has_key(x):
+            if x in self.variable:
                 return self.variable[x]
             return x
         def trim(x):
@@ -185,6 +254,12 @@ class GenSyllable:
                     self.rules.append(reduce(concat,tokens))
             
     def contains(this, word):
+        # Convert bytes to string if needed for regex matching
+        if isinstance(word, bytes):
+            try:
+                word = word.decode('iso-8859-11')
+            except:
+                return 0
         for rule in this.rules:
             reg = re.compile(rule).match(word)
             if reg is not None and reg.group() == word:
@@ -205,10 +280,10 @@ class Segmentation:
     def IsNumber(number):
         if len(number) > 1:
             for d in number:
-                if string.find('0123456789,.๑๒๓๔๕๖๗๘๙๐'.decode('uft8').encode('cp874'),d)==-1:
+                if '0123456789,.๑๒๓๔๕๖๗๘๙๐'.find(d)==-1:
                     return 0
             return 1
-        if string.find('0123456789๑๒๓๔๕๖๗๘๙๐'.decode('utf8').encode('cp874'),number) > -1:
+        if '0123456789๑๒๓๔๕๖๗๘๙๐'.find(number) > -1:
             return 1
         return 0
     IsNumber = staticmethod(IsNumber)
@@ -249,8 +324,41 @@ class Segmentation:
         this.home = home
 
         if database != None:
-            this.trigram = bsddb.hashopen(database,'r')
-            this.corpus_size = int(this.trigram['unigrams'])
+            try:
+                # Try gdbm first
+                this.trigram = gdbm.open(database,'r')
+                this.corpus_size = int(this.trigram[b'unigrams' if isinstance(list(this.trigram.keys())[0], bytes) else 'unigrams'])
+            except Exception as e:
+                # If gdbm doesn't work, try berkeleydb for old Berkeley DB files
+                if HAS_BERKELEYDB:
+                    try:
+                        db = bdb.db.DB()
+                        db.open(database, None, bdb.db.DB_HASH, bdb.db.DB_RDONLY)
+                        this.trigram = BerkeleyDBWrapper(db)
+                        # Get corpus_size from unigrams key
+                        unigrams_val = this.trigram.get('unigrams', '0')
+                        this.corpus_size = int(unigrams_val)
+                    except Exception as bdb_error:
+                        # If berkeleydb also fails, try pickle
+                        try:
+                            with open(database, 'rb') as f:
+                                this.trigram = pickle.load(f)
+                            this.corpus_size = int(this.trigram['unigrams'])
+                        except Exception as pickle_error:
+                            print(f"Warning: Could not load database {database}. Tried gdbm ({e}), berkeleydb ({bdb_error}), and pickle ({pickle_error}). Using empty trigram model.")
+                            this.trigram = {}
+                            this.corpus_size = 0
+                else:
+                    # No berkeleydb available, try pickle
+                    try:
+                        with open(database, 'rb') as f:
+                            this.trigram = pickle.load(f)
+                        this.corpus_size = int(this.trigram['unigrams'])
+                    except Exception as pickle_error:
+                        print(f"Warning: Could not load database {database}. Database appears to be in Berkeley DB format. Install 'berkeleydb' package for Python 3 support: pip install berkeleydb")
+                        this.trigram = {}
+                        this.corpus_size = 0
+            
 
         this.gw = float(gw)
         this.lw = float(lw)
@@ -276,7 +384,8 @@ class Segmentation:
         this.IsComplete = 0
     
     def _getchargroup(this,c):
-        code = ord(c)
+        # In Python 3, if c is from a bytes object, it's already an int
+        code = c if isinstance(c, int) else ord(c)
         if code >= 224 and code <= 228:
             return 2
         elif code == 210 or code == 211 or code == 208:
@@ -289,33 +398,34 @@ class Segmentation:
             return 5
 
     def presegment(this):
-        output = '' 
-        x = range(len(this.line))
-        for i in x:
+        output = b'' 
+        i = 0
+        while i < len(this.line):
             if len(this.line)-i>2 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==1 and this._getchargroup(this.line[i+2])==3:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>2 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==3 and this._getchargroup(this.line[i+2])==1:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>2 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==1 and this._getchargroup(this.line[i+2])==1:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>2 and this._getchargroup(this.line[i])==2 and this._getchargroup(this.line[i+1])==4 and this._getchargroup(this.line[i+2])==1:
-                output += (this.line[i]+this.line[i+1]+this.line[i+2]+' ')
-                x[0:2]=[]
+                output += bytes([this.line[i], this.line[i+1], this.line[i+2]]) + b' '
+                i += 3
             elif len(this.line)-i>1 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==1:
-                output += (this.line[i]+this.line[i+1]+' ')
-                x[0:1]=[]
+                output += bytes([this.line[i], this.line[i+1]]) + b' '
+                i += 2
             elif len(this.line)-i>1 and this._getchargroup(this.line[i])==4 and this._getchargroup(this.line[i+1])==3:
-                output += (this.line[i]+this.line[i+1]+' ')
-                x[0:1]=[]
+                output += bytes([this.line[i], this.line[i+1]]) + b' '
+                i += 2
             elif len(this.line)-i>1 and this._getchargroup(this.line[i])==2 and this._getchargroup(this.line[i+1])==4:
-                output += (this.line[i]+this.line[i+1]+' ')
-                x[0:1]=[]
+                output += bytes([this.line[i], this.line[i+1]]) + b' '
+                i += 2
             else:
-                output += (this.line[i]+' ')
-        return string.split(output[0:len(output)-1])
+                output += bytes([this.line[i]]) + b' '
+                i += 1
+        return output[0:len(output)-1].split()
                 
     def accessdict(this,d,pline,punc):
         clist,alist = [],[]
@@ -328,8 +438,8 @@ class Segmentation:
                 while j < len(alist):
                     activepair = alist[j]
 
-                    if punc != '':
-                        temp = string.replace(activepair[0],punc,'') + pline[i]
+                    if punc != b'':
+                        temp = activepair[0].replace(punc,b'') + pline[i]
                     else:
                         temp = activepair[0] + pline[i]
                         
@@ -378,7 +488,7 @@ class Segmentation:
                     temp3 = temp1[0]
 
                     if end == temp2[0]:
-                        result[len(result):len(result)+1] = [[word+' '+temp3,[position[0],temp2[1]]]]
+                        result[len(result):len(result)+1] = [[word+b' '+temp3,[position[0],temp2[1]]]]
                         if start == 0:
                             del result[j]
                             j-=1
@@ -511,7 +621,7 @@ class Segmentation:
             if check:
                 mark.append(i)
 
-        mid = len(mark)/2 
+        mid = len(mark)//2 
 
 
         result = []
@@ -532,42 +642,42 @@ class Segmentation:
             return results, result1[1] and result2[1]
     
     def mergeUnknownByHeuristic(self,tokens):
-        result,tmp = '',''
+        result,tmp = b'',b''
         start = 0
         count = 0
         for token in tokens:
             if not start and (self.lexiconDict.contains(token) or Segmentation.IsSymbol(token)):
-                result += ' '+token
+                result += b' '+token
             elif not start and (not self.lexiconDict.contains(token) or not Segmentation.IsSymbol(token) or not Segmentation.IsNumber(token)):
                 start = 1
-                result += ' '+token
+                result += b' '+token
             elif start and not count and self.suspectDict.contains(token):
                 tmp = token
                 count = 1
             elif start and not count and (Segmentation.IsSymbol(token) or not self.suspectDict.contains(token)):
                 start = 0
-                result += ' '+token
+                result += b' '+token
             elif start and not count and not self.lexiconDict.contains(token):
                 result += token
             elif start and count and not self.lexiconDict.contains(token) and not Segmentation.IsSymbol(token):
                 result += tmp+token
-                tmp = ''
+                tmp = b''
                 count = 0
             elif start and count and (self.lexiconDict.contains(token) or Segmentation.IsSymbol(token)):
-                result += ' '+tmp+' '+token
+                result += b' '+tmp+b' '+token
                 count = start = 0
-                tmp = ''
+                tmp = b''
 
         if len(tokens) == 2:
             return (result+tmp).strip().split()
         else:
-            return (result+' '+tmp).strip().split()
+            return (result+b' '+tmp).strip().split()
     
     def mergeSyllableByDictionary(self,split_line,my_dict,bypass=0,filter=True):
-        self.setLine(split_line.replace(' ',''))
+        self.setLine(split_line.replace(b' ',b''))
         tokens = split_line.split()
 
-        completeList = self.accessdict(my_dict,tokens,'')
+        completeList = self.accessdict(my_dict,tokens,b'')
 
         if not bypass and len(completeList) > 40:
             result = self.divideAllCompleteList(completeList)
@@ -619,8 +729,7 @@ class Segmentation:
 
         s = len(self.line)
         t = 0
-        X = tmp.keys()
-        X.sort()
+        X = sorted(tmp.keys())
         fill = []
         for x in tmp:
             if x < s:
@@ -652,9 +761,9 @@ class Segmentation:
         for s,t in fill:
             clist.append([self.line[s:t],[s,t]])
 
-        ctmp = map(lambda x:(x[1],x[0]),clist)
+        ctmp = list(map(lambda x:(x[1],x[0]),clist))
         ctmp.sort()
-        ctmp = map(lambda x:(x[1],x[0]),ctmp)
+        ctmp = list(map(lambda x:(x[1],x[0]),ctmp))
 
         return ctmp
 
@@ -664,7 +773,7 @@ class Segmentation:
         
         pline = this.presegment()
 
-        this.completeList = this.accessdict(this.dict,pline,'')
+        this.completeList = this.accessdict(this.dict,pline,b'')
         this.completeList = this.complete(this.completeList)
 
         #print 'line',this.line.decode('cp874')
@@ -753,15 +862,15 @@ class Segmentation:
 
             return al,this.hasunknown
         
-    def filterResult(this,result,punc=''):
+    def filterResult(this,result,punc=b''):
         max = 0
         maxlist = []
         for r in result:
-            tokens = string.split(r)
-            cost = len(string.replace(r,' ',''))  + 10000  - (len(tokens)*3)
+            tokens = r.split()
+            cost = len(r.replace(b' ',b''))  + 10000  - (len(tokens)*3)
             for token in tokens:
-                if punc != '':
-                    token = token.replace(punc,'')
+                if punc != b'':
+                    token = token.replace(punc,b'')
                 if not this.lexiconDict.contains(token):
                     if this.gensyl.contains(token):
                         cost -= 0.5
@@ -780,7 +889,7 @@ class Segmentation:
     def preMergeUnknownWord(self,results):
         al = []
         for result in results:
-            token = string.split(result)
+            token = result.split()
             i = 1
             result = token[0] 
             while i < len(token):
@@ -790,9 +899,9 @@ class Segmentation:
        ((not Segmentation.IsThaiWord(token[i-1]) and not Segmentation.IsThaiWord(token[i])))):
                     result += token[i]
                 else:
-                    result += ' ' + token[i]
+                    result += b' ' + token[i]
                 i+=1
-            if result[0] is ' ':
+            if result[0:1] == b' ':
                 result = result[1:len(result)]
             al.append(result)
 
@@ -801,35 +910,35 @@ class Segmentation:
     def mergeUnknownSyllable(this,unknownlist):
         al = []
         for unknown in unknownlist:
-            token = string.split(unknown)
-            result = ''
+            token = unknown.split()
+            result = b''
             j = 0
             while j < len(token):
-                if len(token[j]) == 1 and token[j] != '_' and Segmentation.IsThaiChar(token[j]):
-                    if j > 0 and token[j-1] != '_' and j < len(token)-1 and token[j+1] != '_':
+                if len(token[j]) == 1 and token[j] != b'_' and Segmentation.IsThaiChar(token[j] if isinstance(token[j], int) else token[j][0]):
+                    if j > 0 and token[j-1] != b'_' and j < len(token)-1 and token[j+1] != b'_':
                         if this.gensyl.contains(token[j-1]+token[j]) and this.gensyl.contains(token[j]+token[j+1]):
                             result += token[j]
                         elif this.gensyl.contains(token[j-1]+token[j]):
                             result += token[j]
                         elif this.gensyl.contains(token[j]+token[j-1]):
-                            result += ' ' + token[j] + '+'
-                        elif token[j] == 'Í' or token[j] == 'Ê':
-                            result += ' ' + token[j] + '+'
+                            result += b' ' + token[j] + b'+'
+                        elif token[j] == b'\xcd' or token[j] == b'\xca':  # 'Í' or 'Ê' in iso-8859-11
+                            result += b' ' + token[j] + b'+'
                         elif this.lexiconDict.contains(token[j-1]):
-                            result += ' ' + token[j] + '+'
+                            result += b' ' + token[j] + b'+'
                         else:
                             result += token[j]
 
-                    elif j>0 and token[j-1] != '_':
+                    elif j>0 and token[j-1] != b'_':
                         result += token[j]
-                    elif j<len(token)-1 and token[j+1] != '_':
-                        result += ' ' + token[j] + '+'
+                    elif j<len(token)-1 and token[j+1] != b'_':
+                        result += b' ' + token[j] + b'+'
                     elif j == 0:
-                        result += ' ' + token[j] + '+'
+                        result += b' ' + token[j] + b'+'
                     else:
                         result += token[j]
                         
-                elif len(token[j]) < 4 and j > 0 and not this.lexiconDict.contains(token[j]) and string.find(token[j],'ì') > -1:
+                elif len(token[j]) < 4 and j > 0 and not this.lexiconDict.contains(token[j]) and token[j].find(b'\xec') > -1:  # 'ì' in iso-8859-11
                     result += token[j]
                 elif j > 0 and this.gensyl.contains(token[j-1]+token[j]):
                     result += token[j]
@@ -837,14 +946,14 @@ class Segmentation:
                     result += token[j] + token[j+1]
                     j += 1
                 else:
-                    result += ' '+token[j]
+                    result += b' '+token[j]
                 j+=1
 
-            result = string.replace(result,'+ ','')
-            result = string.replace(result,'+','')
+            result = result.replace(b'+ ',b'')
+            result = result.replace(b'+',b'')
             
             # check len before (workaround)
-            if len(result) > 0 and result[0] is ' ':
+            if len(result) > 0 and result[0:1] == b' ':
                 result = result[1:len(result)]
 
             if al.count(result) == 0:
@@ -923,7 +1032,9 @@ class Segmentation:
         cat = lambda x,y:x+y
         pattern = r'.*(¹ÒÂ|¹Ò§|¹Ò§ÊÒÇ _) ([^_]+)'
         reg = re.compile(pattern)
-        m = reg.match(line)
+        # Convert bytes to string for regex matching
+        line_str = line.decode('iso-8859-11') if isinstance(line, bytes) else line
+        m = reg.match(line_str)
         if m is not None:
             name = m.group(2)
             if len(name.strip().split()) > 1:
@@ -958,15 +1069,18 @@ class Segmentation:
 
         for line in lines:
             try:
-                if isinstance(line, unicode):
+                if isinstance(line, str):
+                    # In Python 3, str is unicode
                     line = line.strip().encode('iso8859_11')
-                else:
+                elif isinstance(line, bytes):
                     line = line.strip().decode('utf8').encode('iso8859_11')
+                else:
+                    line = str(line).strip().encode('iso8859_11')
             except:
-                print 'encoding error:', line
+                print('encoding error:', line)
 
-            if not self.quiet: print line_count
-            tokens = string.split(line.replace('+','<-plus->').strip())
+            if not self.quiet: print(line_count)
+            tokens = line.replace(b'+',b'<-plus->').strip().split()
             tmp = []
             line_count += 1
 
@@ -990,7 +1104,7 @@ class Segmentation:
                 elif no_stat and skip and len(result) > 1:
                     result = ['']
                 elif no_stat and get_all and len(result) > 1:
-                    print 'this option is not implemented yet'
+                    print('this option is not implemented yet')
                 else:
                     result = [result[random.randrange(0,len(result))]]                  
 
@@ -1048,7 +1162,7 @@ class Segmentation:
                     tokens,modify = content
                     if len(tokens) > 1:
                         if not no_stat:
-                            tokens = self.statWordDisambiguousLine(reduce(lambda x,y:x+' '+y,tokens)).split()
+                            tokens = self.statWordDisambiguousLine(reduce(lambda x,y:x+b' '+y,tokens)).split()
                         tokens = self.mergeUnknownByHeuristic(tokens)
                     tmp_contents.append((tokens,modify))
                 tmp_results.append((number,tmp_contents))
@@ -1063,16 +1177,16 @@ class Segmentation:
         if x != None and y != None and z != None:
             try:
                 return float(self.trigram['%s %s %s'%(x,y,z)])/float(self.trigram['trigrams'])
-            except KeyError,e:
+            except KeyError as e:
                 return 1.0/float(self.trigram['trigrams'])
         if x != None and y != None:
             try:
                 return float(self.trigram['%s %s'%(x,y)])/float(self.trigram['bigrams'])
-            except KeyError,e:
+            except KeyError as e:
                 return 1.0/float(self.trigram['bigrams'])
         try:
             return float(self.trigram['%s'%(x)])/float(self.trigram['unigrams'])
-        except KeyError,e:
+        except KeyError as e:
             return 1.0/float(self.trigram['unigrams'])
                 
     def _mi(self,x,y):  
@@ -1119,18 +1233,18 @@ class Segmentation:
                 for w_l,w_r in [(l_w_l,l_w_r),(r_w_l,r_w_r)]:
                     try:
                         l_s = self._stat_global(words[i-3]+' '+words[i-2]+' '+w_l,'left')
-                    except IndexError,e:
+                    except IndexError as e:
                         try:
                             l_s = self._stat_global(words[i-2]+' '+w_l,'left')
-                        except IndexError,e:
+                        except IndexError as e:
                             l_s = self._stat_global(w_l,'left')
                                 
                     try:
                         r_s = self._stat_global(w_r+' '+words[i+2]+' '+words[i+3],'right')
-                    except IndexError,e:
+                    except IndexError as e:
                         try:
                             r_s = self._stat_global(w_r+' '+words[i+2],'right')
-                        except IndexError,e:
+                        except IndexError as e:
                             r_s = self._stat_global(w_r,'right')
 
                     prob = (0.5*l_s)+(0.5*r_s)
@@ -1161,7 +1275,7 @@ class Segmentation:
             if result.count(i-1):
                 output += words[i]
             else:
-                output += ' '+words[i]
+                output += b' '+words[i]
                 
         return output
     
@@ -1174,9 +1288,9 @@ class Segmentation:
 
         for line in lines:
             count += 1
-            per = (count*100)/total
+            per = (count*100)//total
             if per != pre:
-                if not self.quiet: print '.',
+                if not self.quiet: print('.', end='')
                 pre = per
             tmp = []
             for t in line[1]:
@@ -1199,10 +1313,10 @@ class Segmentation:
                                 x,y = 0,0
                                 x_p,y_p = 0.0,0.0
                                                             
-                                if self.trigram.has_key(L[i-2]+' '+prev):
+                                if (L[i-2]+' '+prev):
                                     x = float(self.trigram[L[i-2]+' '+prev])
                                     x_p = self._getTrigram(L[i-2],prev)
-                                if self.trigram.has_key(prev+' '+token):
+                                if (prev+' '+token):
                                     y = float(self.trigram[prev+' '+token])
                                     y_p = self._getTrigram(prev,token)
                                 ### first case ###
@@ -1221,10 +1335,10 @@ class Segmentation:
                             else:
                                 x,y = 0,0
                                 x_p,y_p = 0.0,0.0
-                                if self.trigram.has_key(next+' '+L[i+2]):
+                                if (next+' '+L[i+2]):
                                     x = float(self.trigram[next+' '+L[i+2]])
                                     x_p = self._getTrigram(next,L[i+2])
-                                if self.trigram.has_key(token+' '+next):
+                                if (token+' '+next):
                                     y = float(self.trigram[token+' '+next])
                                     y_p = self._getTrigram(token,next)
                                 if (x == 0 and y == 0) or (x < y or x_p < y_p) or (x > y and (x < Threshold1 or x_p < Threshold2)):
@@ -1326,19 +1440,19 @@ class Segmentation:
                 for j in range(len(lines[1][0][0])):
                     try:
                         n1 = lines[1][i][0][j+1]
-                    except IndexError,e:
+                    except IndexError as e:
                         n1 = ''
                     try:
                         n2 = lines[1][i][0][j+2]
-                    except IndexError,e:
+                    except IndexError as e:
                         n2 = ''
                     try:
                         p1 = lines[1][i][0][j-1]
-                    except IndexError,e:
+                    except IndexError as e:
                         p1 = ''
                     try:
                         p2 = lines[1][i][0][j-2]
-                    except IndexError,e:
+                    except IndexError as e:
                         p2 = ''
                         
                     w = lines[1][i][0][j]
@@ -1402,7 +1516,8 @@ class Segmentation:
 
 
     def loadProhibitPattern(self,prohibit_file):
-        lines = open(prohibit_file,'r').readlines()
+        with open(prohibit_file,'r', encoding='iso-8859-11') as f:
+            lines = f.readlines()
         for line in lines:
             self.prohibitPattern[line.strip()] = 1
 
@@ -1410,7 +1525,7 @@ class Segmentation:
         tokens = line.strip().split()
         for i in range(len(tokens))[1:]:
             code = tokens[i-1]+' '+tokens[i]
-            if self.prohibitPattern.has_key(code):
+            if code in self.prohibitPattern:
                 return 1
         return 0
     

@@ -28,7 +28,7 @@ def print_board(board):
     n2 = len(board); n = exact_sqrt(n2)
     for i in range(n2):
         if i % n == 0: print
-        if board[i] == 'Q': print 'Qu',
+        if board[i] == 'Q': print('Qu'),
         else: print str(board[i]) + ' ',
     print
     
@@ -156,7 +156,7 @@ def boggle_hill_climbing(n=5, ntimes=1000, print_it=True):
         i, c = mutate(board)
         new = len(finder.set_board(board))
         if new > best:
-            print best, new
+            print(best, new)
             best = new
         else:
             board[i] = c ## Change back
